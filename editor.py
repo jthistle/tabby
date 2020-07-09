@@ -1,7 +1,7 @@
 import curses
 from console import Console
 from header import Header
-
+from cmd_parser import parse_cmd, Action, ActionMod
 
 class Editor:
     def __init__(self):
@@ -18,8 +18,13 @@ class Editor:
         self.win.clear()
         self.win.addstr(0, 1, "Hello, world!")
 
-    def handle_cmd(self, cmd):
-        self.console.echo("Cmd: {}".format(cmd))
+    def handle_cmd(self, raw_cmd):
+        cmd = parse_cmd(raw_cmd)
+        if not cmd:
+            self.console.error("Invalid command!")
+            return
+
+        self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
     def handle_input(self):
         if self.console.in_cmd:

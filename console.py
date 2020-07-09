@@ -1,6 +1,7 @@
 import curses
 import re
 from line_input import LineInput
+from colour_pairs import Pair
 
 class Console:
     def __init__(self):
@@ -12,23 +13,28 @@ class Console:
 
         self.line_input = LineInput(self.win, self.on_input_val_change, 1)
 
+        self.in_error_state = False
+
         # Initial update
         self.update()
         self.draw()
 
-    def update(self):
-        self.win.clear()
-        self.win.addstr(0, 0, self.output)
 
-    def echo(self, msg):
+    def set_output(self, msg):
         self.output = msg
         self.update()
         self.draw()
 
+    def echo(self, msg):
+        self.in_error_state = False
+        self.set_output(msg)
+
+    def error(self, msg):
+        self.in_error_state = True
+        self.set_output(msg)
+
     def clear(self):
-        self.output = ""
-        self.update()
-        self.draw()
+        self.echo("")
 
     def begin_cmd(self):
         if self.in_cmd:
@@ -63,6 +69,14 @@ class Console:
             self.end_cmd()
 
         return res
+
+    def update(self):
+        text_attr = 0
+        if self.in_error_state:
+            text_attr = curses.color_pair(Pair.WHITE_RED.value)
+
+        self.win.clear()
+        self.win.addstr(0, 0, self.output, text_attr)
 
     def draw(self):
         self.win.refresh()
