@@ -1,7 +1,7 @@
 import curses
 import re
-from line_input import LineInput
-from colour_pairs import Pair
+from .line_input import LineInput
+from .colour_pairs import Pair
 
 class Console:
     def __init__(self):

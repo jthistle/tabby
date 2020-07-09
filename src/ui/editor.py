@@ -1,7 +1,7 @@
 import curses
-from console import Console
-from header import Header
-from cmd_parser import parse_cmd, Action, ActionMod, get_help
+from .console import Console
+from .header import Header
+from .cmd_parser import parse_cmd, Action, ActionMod, get_help
 
 class Editor:
     def __init__(self):
@@ -22,7 +22,7 @@ class Editor:
         cmd = parse_cmd(raw_cmd)
         if not cmd:
             self.console.error("Invalid command!")
-            return
+            return True
 
         action = cmd.get("action")
         if action == Action.HELP:
@@ -35,10 +35,17 @@ class Editor:
             help_str = get_help(cmd_str)
             if help_str is None:
                 self.console.error("Command {} doesn't exist!".format(cmd_str))
-                return
-            self.console.echo("usage: " + help_str.format(cmd_str))
+            else:
+                self.console.echo("usage: " + help_str.format(cmd_str))
+        elif action == Action.SAVE_QUIT:
+            # TODO save
+            return False
+        elif action == Action.QUIT:
+            return False
         else:
             self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
+
+        return True
 
     def handle_input(self):
         if self.console.in_cmd:
@@ -46,7 +53,9 @@ class Editor:
             if res:
                 return True
             elif self.console.current_cmd != "":
-                self.handle_cmd(self.console.current_cmd)
+                cmd_res = self.handle_cmd(self.console.current_cmd)
+                if not cmd_res:
+                    return False
 
         key = self.win.getkey()
         if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug

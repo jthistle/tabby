@@ -2,8 +2,8 @@
 
 import os
 import curses
-from editor import Editor
-from colour_pairs import init_pairs
+from ui.editor import Editor
+from ui.colour_pairs import init_pairs
 
 
 def setup():

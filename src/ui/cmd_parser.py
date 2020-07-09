@@ -1,5 +1,5 @@
 from enum import Enum
-from logger import logger
+from .logger import logger
 
 class Action(Enum):
     QUIT = 1
@@ -16,7 +16,7 @@ class ActionMod(Enum):
 ALIASES = {
     Action.QUIT: ["q", "quit"],
     Action.SAVE_QUIT: ["wq"],
-    Action.SAVE: ["w", "write", "save"],
+    Action.SAVE: ["w", "write", "s", "save"],
     Action.HELP: ["h", "help"],
 }
 
@@ -34,7 +34,7 @@ def parse_cmd(cmd):
     modifier = ActionMod.NONE
     if parts[0][-1] == "!":
         modifier = ActionMod.FORCE
-        parts[0] = parts[:-1]
+        parts[0] = parts[0][:-1]
 
     cmd = parts[0]
     for action in ALIASES:
