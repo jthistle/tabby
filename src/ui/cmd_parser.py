@@ -1,5 +1,5 @@
 from enum import Enum
-from .logger import logger
+from util.logger import logger
 
 class Action(Enum):
     QUIT = 1

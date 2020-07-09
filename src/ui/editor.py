@@ -2,6 +2,7 @@ import curses
 from .console import Console
 from .header import Header
 from .cmd_parser import parse_cmd, Action, ActionMod, get_help
+from lib.tab import Tab
 
 class Editor:
     def __init__(self):
@@ -9,6 +10,11 @@ class Editor:
         self.console = Console()
         self.win = curses.newwin(curses.LINES - 2, curses.COLS, 1, 0)
         self.win.keypad(True)
+        self.win.scrollok(1)
+
+        self.viewport_pos = [0, 0]
+
+        self.current_tab = Tab()
 
         # Initial update
         self.update()
@@ -16,7 +22,8 @@ class Editor:
 
     def update(self):
         self.win.clear()
-        self.win.addstr(0, 1, "Hello, world!")
+        tab = self.current_tab.layout()
+        self.win.addstr(tab)
 
     def handle_cmd(self, raw_cmd):
         cmd = parse_cmd(raw_cmd)
