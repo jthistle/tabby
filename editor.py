@@ -1,7 +1,7 @@
 import curses
 from console import Console
 from header import Header
-from cmd_parser import parse_cmd, Action, ActionMod
+from cmd_parser import parse_cmd, Action, ActionMod, get_help
 
 class Editor:
     def __init__(self):
@@ -24,7 +24,21 @@ class Editor:
             self.console.error("Invalid command!")
             return
 
-        self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
+        action = cmd.get("action")
+        if action == Action.HELP:
+            cmd_str = ""
+            if len(cmd.get("parts")) == 1:
+                # TODO display help screen
+                cmd_str = cmd.get("parts")[0]
+            else:
+                cmd_str = cmd.get("parts")[1]
+            help_str = get_help(cmd_str)
+            if help_str is None:
+                self.console.error("Command {} doesn't exist!".format(cmd_str))
+                return
+            self.console.echo("usage: " + help_str.format(cmd_str))
+        else:
+            self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
     def handle_input(self):
         if self.console.in_cmd:

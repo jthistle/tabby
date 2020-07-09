@@ -5,6 +5,7 @@ class Action(Enum):
     QUIT = 1
     SAVE_QUIT = 2
     SAVE = 3
+    HELP = 4
 
 
 class ActionMod(Enum):
@@ -16,6 +17,15 @@ ALIASES = {
     Action.QUIT: ["q", "quit"],
     Action.SAVE_QUIT: ["wq"],
     Action.SAVE: ["w", "write", "save"],
+    Action.HELP: ["h", "help"],
+}
+
+
+HELP_STRINGS = {
+    Action.QUIT: "{}: quit tab editor",
+    Action.SAVE_QUIT: "{}: quit tab editor, saving any unsaved changes",
+    Action.SAVE: "{}: save any unsaved changes",
+    Action.HELP: "{} [command]: get help with the usage of a command",
 }
 
 
@@ -31,6 +41,15 @@ def parse_cmd(cmd):
         if cmd in ALIASES[action]:
             return {
                 "action": action,
-                "modifier": modifier
+                "modifier": modifier,
+                "parts": parts
             }
+    return None
+
+
+def get_help(cmd_str):
+    for action in ALIASES:
+        if cmd_str in ALIASES[action]:
+            return HELP_STRINGS[action]
+
     return None
