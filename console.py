@@ -1,0 +1,69 @@
+import curses
+import re
+from line_input import LineInput
+
+class Console:
+    def __init__(self):
+        self.win = curses.newwin(1, curses.COLS, curses.LINES - 1, 0)
+        self.win.keypad(True)
+        self.output = ""
+        self.current_cmd = ""
+        self.in_cmd = False
+
+        self.line_input = LineInput(self.win, self.on_input_val_change, 1)
+
+        # Initial update
+        self.update()
+        self.draw()
+
+    def update(self):
+        self.win.clear()
+        self.win.addstr(0, 0, self.output)
+
+    def echo(self, msg):
+        self.output = msg
+        self.update()
+        self.draw()
+
+    def clear(self):
+        self.output = ""
+        self.update()
+        self.draw()
+
+    def begin_cmd(self):
+        if self.in_cmd:
+            self.echo("Internal error: already in cmd!")
+            return
+
+        self.in_cmd = True
+        self.current_cmd = ""
+        self.echo(":")
+        self.line_input.reset()
+
+    def end_cmd(self):
+        if not self.in_cmd:
+            self.echo("Internal error: not in cmd!")
+            return
+
+        self.in_cmd = False
+        self.clear()
+
+    def on_input_val_change(self, new_val):
+        self.current_cmd = new_val
+        self.echo(":" + self.current_cmd)
+
+    def handle_input(self):
+        if not self.in_cmd:
+            self.echo("Internal error: can't handle input, not in cmd!")
+            return
+
+        res = self.line_input.handle_input()
+
+        if not res:
+            self.end_cmd()
+
+        return res
+
+    def draw(self):
+        self.win.refresh()
+
