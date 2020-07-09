@@ -2,7 +2,14 @@
 from .bar import Bar
 from .tuning import Tuning
 from .text import Text
+from .cursor import Cursor
 from util.logger import logger
+
+
+class LayoutResult:
+    def __init__(self, txt, highlighted = None):
+        self.txt = txt
+        self.highlighted = highlighted or []
 
 
 class Tab:
@@ -10,7 +17,25 @@ class Tab:
         self.default_tuning = Tuning()
         self.children = [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
         self.max_width = 100
-        logger.info("init tab")
+        self.cursor = Cursor(self)
+
+    def bar(self, n):
+        i = 0
+        for child in self.children:
+            if type(child) == Bar:
+                if i == n:
+                    return child
+                i += 1
+
+        return None
+
+    def nbars(self):
+        i = 0
+        for child in self.children:
+            if type(child) == Bar:
+                i += 1
+
+        return i
 
     def prev_bar(self, bar):
         found = -1
@@ -31,6 +56,10 @@ class Tab:
     def layout(self) -> str:
         current_width = 0
         system_start = True
+        current_bar_num = 0
+
+        cursor_highlight_start = [0, 0]     # line, column
+        cursor_highlight_end = [0, 0]
 
         padding_left = 1
         padding_top = 1
@@ -57,7 +86,18 @@ class Tab:
                 else:
                     current_width += width
 
+                # Layout bar
                 bar_lines = child.layout(system_start)
+
+                # Decide where to put the cursor
+                if current_bar_num == self.cursor.bar():
+                    cols = child.get_cursor_pos(system_start, self.cursor.column())
+                    horizontal = padding_left + cols
+                    if not system_start:
+                        horizontal += len(lines[vertical_offset])
+                    cursor_highlight_start = [vertical_offset, horizontal]
+                    cursor_highlight_end = [vertical_offset + child.nstrings() - 1, horizontal]
+
                 for i in range(len(bar_lines)):
                     ind = i + vertical_offset
                     if ind > len(lines) - 1:
@@ -66,9 +106,15 @@ class Tab:
                     lines[ind] += bar_lines[i]
 
                 system_start = False
+                current_bar_num += 1
 
-        return "\n".join([" " * padding_left + x for x in lines])
+        highlighted = []
+        for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):
+            for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
+                highlighted.append((y, x))
 
+        txt = "\n".join([" " * padding_left + x for x in lines])
+        return LayoutResult(txt, highlighted)
 
 
 

@@ -38,3 +38,7 @@ class Bar:
             lines.insert(0, line)
 
         return ["".join(line) for line in lines]
+
+    def get_cursor_pos(self, is_system_start, cursor_columns):
+        """Returns the position of the cursor relative to the start of the bar"""
+        return 1 + cursor_columns + (2 if is_system_start else 0)

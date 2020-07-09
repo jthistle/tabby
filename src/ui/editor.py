@@ -3,6 +3,7 @@ from .console import Console
 from .header import Header
 from .cmd_parser import parse_cmd, Action, ActionMod, get_help
 from lib.tab import Tab
+from util.logger import logger
 
 class Editor:
     def __init__(self):
@@ -10,20 +11,43 @@ class Editor:
         self.console = Console()
         self.win = curses.newwin(curses.LINES - 2, curses.COLS, 1, 0)
         self.win.keypad(True)
-        self.win.scrollok(1)
 
-        self.viewport_pos = [0, 0]
+        self.viewport_pos = 0       # vertically
+        self.last_cursor_draw = []
 
         self.current_tab = Tab()
 
+
         # Initial update
+        curses.curs_set(0)
         self.update()
         self.draw()
 
     def update(self):
         self.win.clear()
         tab = self.current_tab.layout()
-        self.win.addstr(tab)
+        self.win.addstr(self.viewport_pos, 0, tab.txt)
+        self.update_cursor(tab)
+
+    def update_cursor(self, tab = None, clear = False):
+        if not tab:
+            tab = self.current_tab.layout()
+
+        if clear:
+            # Remove last highlighting if only updating cursor
+            for pos in self.last_cursor_draw:
+                # Bottom eight bits ignores formatting/colours
+                ch = self.win.inch(pos[0], pos[1]) & ((1 << 8) - 1)
+                self.win.addch(pos[0], pos[1], ch, 0)
+
+        # Process new cursor highlighting
+        for pos in tab.highlighted:
+            ch = self.win.inch(pos[0], pos[1])
+            logger.debug("new ch {}".format(ch))
+            self.win.addch(pos[0], pos[1], ch, curses.A_REVERSE)
+
+        self.last_cursor_draw = tab.highlighted
+
 
     def handle_cmd(self, raw_cmd):
         cmd = parse_cmd(raw_cmd)
@@ -69,6 +93,11 @@ class Editor:
             return False
         elif key == ":":
             self.console.begin_cmd()
+        elif key == "KEY_RIGHT" or key == "KEY_LEFT":
+            direction = 1 if key == "KEY_RIGHT" else -1
+            self.current_tab.cursor.move(direction)
+            self.update_cursor(tab=None, clear=True)
+            self.draw()
         else:
             self.console.echo("Char: {}".format(key).replace("\n", "newline"))
 

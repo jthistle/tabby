@@ -45,6 +45,7 @@ class Console:
         self.current_cmd = ""
         self.echo(":")
         self.line_input.reset()
+        curses.curs_set(1)
 
     def end_cmd(self):
         if not self.in_cmd:
@@ -53,6 +54,7 @@ class Console:
 
         self.in_cmd = False
         self.clear()
+        curses.curs_set(0)
 
     def on_input_val_change(self, new_val):
         self.current_cmd = new_val

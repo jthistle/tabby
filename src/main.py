@@ -15,9 +15,9 @@ def post_start():
 
 
 def main(stdscr):
-    editor = Editor()
-
     post_start()
+
+    editor = Editor()
 
     res = True
     while res:
