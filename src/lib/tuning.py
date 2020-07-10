@@ -1,14 +1,28 @@
 
 from util.logger import logger
 
-DEFAULT_TUNING = ["E", "A", "D", "G", "B", "e"]
+
+STANDARD_TUNING = ["E", "A", "D", "G", "B", "e"]
+DROP_D = ["D", "A", "d", "G", "B", "E"]
+STANDARD_BASS = ["E", "A", "D", "G"]
+E_FLAT = ["Eb", "Ab", "Db", "Gb", "Bb", "eb"]
+
+TUNINGS = {
+    "standard": STANDARD_TUNING,
+    "std": STANDARD_TUNING,
+    "bass": STANDARD_BASS,
+    "dropd": DROP_D,
+    "eflat": E_FLAT,
+}
 
 class Tuning:
     def __init__(self, tuning_str = ""):
-        if tuning_str != "":
+        if tuning_str.strip().lower() in TUNINGS:
+            self.strings = TUNINGS[tuning_str.strip().lower()]
+        elif tuning_str != "":
             self.strings = self.parse_str(tuning_str)
         else:
-            self.strings = DEFAULT_TUNING
+            self.strings = STANDARD_TUNING
 
     def get_width(self):
         m = 1
