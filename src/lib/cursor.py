@@ -5,6 +5,7 @@ class Cursor:
     def __init__(self, tab):
         self.tab = tab
         self.position = [0, 0]      # bar, column
+        self.string = 0             # starts from bottom
 
     def bar(self):
         return self.position[0]
@@ -25,3 +26,11 @@ class Cursor:
                 return
 
         self.position = [new_bar, new_col]
+
+    def move_string(self, direction):
+        """+1 for up, -1 for down"""
+        cur_bar = self.tab.bar(self.position[0])
+        max_s = cur_bar.nstrings() - 1
+
+        self.string = min(max_s, max(0, self.string + direction))
+

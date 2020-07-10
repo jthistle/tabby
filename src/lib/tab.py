@@ -7,9 +7,10 @@ from util.logger import logger
 
 
 class LayoutResult:
-    def __init__(self, txt, highlighted = None):
+    def __init__(self, txt, highlighted = None, strong = None):
         self.txt = txt
         self.highlighted = highlighted or []
+        self.strong = strong or []
 
 
 class Tab:
@@ -53,13 +54,16 @@ class Tab:
 
         return None
 
-    def layout(self) -> str:
+    def layout(self) -> LayoutResult:
         current_width = 0
         system_start = True
         current_bar_num = 0
 
         cursor_highlight_start = [0, 0]     # line, column
         cursor_highlight_end = [0, 0]
+
+        cursor_strong_highlight_start = [0, 0]
+        cursor_strong_highlight_end = [0, 0]
 
         padding_left = 1
         padding_top = 1
@@ -98,6 +102,11 @@ class Tab:
                     cursor_highlight_start = [vertical_offset, horizontal]
                     cursor_highlight_end = [vertical_offset + child.nstrings() - 1, horizontal]
 
+                    # Specific string highlighting
+                    bottom_line = vertical_offset + child.nstrings() - 1
+                    cursor_strong_highlight_start = [bottom_line - self.cursor.string, horizontal]
+                    cursor_strong_highlight_end   = [bottom_line - self.cursor.string, horizontal]
+
                 for i in range(len(bar_lines)):
                     ind = i + vertical_offset
                     if ind > len(lines) - 1:
@@ -113,8 +122,13 @@ class Tab:
             for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
                 highlighted.append((y, x))
 
+        strong_highlighted = []
+        for y in range(cursor_strong_highlight_start[0], cursor_strong_highlight_end[0] + 1):
+            for x in range(cursor_strong_highlight_start[1], cursor_strong_highlight_end[1] + 1):
+                strong_highlighted.append((y, x))
+
         txt = "\n".join([" " * padding_left + x for x in lines])
-        return LayoutResult(txt, highlighted)
+        return LayoutResult(txt, highlighted, strong_highlighted)
 
 
 

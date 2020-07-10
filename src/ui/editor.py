@@ -4,6 +4,8 @@ from .header import Header
 from .cmd_parser import parse_cmd, Action, ActionMod, get_help
 from lib.tab import Tab
 from util.logger import logger
+from .colour_pairs import Pair
+
 
 class Editor:
     def __init__(self):
@@ -30,6 +32,8 @@ class Editor:
         self.update_cursor(tab)
 
     def update_cursor(self, tab = None, clear = False):
+        # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
+        # In the future, just work out a way of doing it without doing this.
         if not tab:
             tab = self.current_tab.layout()
 
@@ -37,15 +41,19 @@ class Editor:
             # Remove last highlighting if only updating cursor
             for pos in self.last_cursor_draw:
                 # Bottom eight bits ignores formatting/colours
-                ch = self.win.inch(pos[0], pos[1]) & ((1 << 8) - 1)
+                ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
                 self.win.addch(pos[0], pos[1], ch, 0)
 
         # Process new cursor highlighting
         for pos in tab.highlighted:
             ch = self.win.inch(pos[0], pos[1])
-            logger.debug("new ch {}".format(ch))
-            self.win.addch(pos[0], pos[1], ch, curses.A_REVERSE)
+            self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_DIM.value) | curses.A_DIM)
 
+        for pos in tab.strong:
+            ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
+            self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
+
+        # Should be enough - we expect tab.strong to always be contained within tab.highlighted
         self.last_cursor_draw = tab.highlighted
 
 
@@ -96,6 +104,11 @@ class Editor:
         elif key == "KEY_RIGHT" or key == "KEY_LEFT":
             direction = 1 if key == "KEY_RIGHT" else -1
             self.current_tab.cursor.move(direction)
+            self.update_cursor(tab=None, clear=True)
+            self.draw()
+        elif key == "KEY_UP" or key == "KEY_DOWN":
+            direction = 1 if key == "KEY_UP" else -1
+            self.current_tab.cursor.move_string(direction)
             self.update_cursor(tab=None, clear=True)
             self.draw()
         else:
