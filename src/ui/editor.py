@@ -41,8 +41,7 @@ class Editor:
         tab = self.current_tab.layout()
         self.win.addstr(self.viewport_pos, 0, tab.txt)
 
-        if self.mode == Mode.EDIT:
-            self.update_cursor(tab)
+        self.update_cursor(tab)
 
     def update_cursor(self, tab = None, clear = False):
         # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
@@ -59,9 +58,11 @@ class Editor:
             ch = self.win.inch(pos[0], pos[1])
             self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_DIM.value) | curses.A_DIM)
 
-        for pos in tab.strong:
-            ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
-            self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
+        # Strong highlighting in EDIT mode only
+        if self.mode == Mode.EDIT:
+            for pos in tab.strong:
+                ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
+                self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
 
         # Should be enough - we expect tab.strong to always be contained within tab.highlighted
         self.last_cursor_draw = tab.highlighted
@@ -78,7 +79,7 @@ class Editor:
             return
 
         if old_mode == Mode.EDIT:
-            self.clear_cursor()
+            self.update_cursor()
 
         self.mode = new_mode
         if new_mode == Mode.EDIT:
@@ -139,6 +140,18 @@ class Editor:
         key = self.win.getkey()
         if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
             self.change_mode(Mode.VIEW)
+        elif key == "KEY_RIGHT" or key == "KEY_LEFT":
+            direction = 1 if key == "KEY_RIGHT" else -1
+            self.current_tab.cursor.move(direction)
+            self.post_cursor_move()
+        elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
+            direction = 1 if key == "kRIT5" else -1
+            self.current_tab.cursor.move_big(direction)
+            self.post_cursor_move()
+        elif key == "KEY_UP" or key == "KEY_DOWN":
+            direction = 1 if key == "KEY_UP" else -1
+            self.current_tab.cursor.move_string(direction)
+            self.post_cursor_move()
         elif self.mode == Mode.VIEW:
             if key == "e":
                 self.change_mode(Mode.EDIT)
@@ -147,19 +160,7 @@ class Editor:
             elif key == ":":
                 self.console.begin_cmd()
         elif self.mode == Mode.EDIT:
-            if key == "KEY_RIGHT" or key == "KEY_LEFT":
-                direction = 1 if key == "KEY_RIGHT" else -1
-                self.current_tab.cursor.move(direction)
-                self.post_cursor_move()
-            elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
-                direction = 1 if key == "kRIT5" else -1
-                self.current_tab.cursor.move_big(direction)
-                self.post_cursor_move()
-            elif key == "KEY_UP" or key == "KEY_DOWN":
-                direction = 1 if key == "KEY_UP" else -1
-                self.current_tab.cursor.move_string(direction)
-                self.post_cursor_move()
-            elif len(key) == 1:
+            if len(key) == 1:
                 note = self.current_tab.cursor.note()
                 if self.first_entry:
                     note.value = key

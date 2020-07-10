@@ -5,7 +5,7 @@ class Cursor:
     def __init__(self, tab, initial_chord):
         self.tab = tab
         self.chord = initial_chord
-        self.string = 0             # starts from bottom
+        self.string = initial_chord.parent.nstrings() - 1
 
     def bar(self):
         return self.chord.parent
