@@ -19,7 +19,6 @@ class Editor:
 
         self.current_tab = Tab()
 
-
         # Initial update
         curses.curs_set(0)
         self.update()
@@ -43,6 +42,8 @@ class Editor:
                 # Bottom eight bits ignores formatting/colours
                 ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
                 self.win.addch(pos[0], pos[1], ch, 0)
+
+        logger.debug("Hihglighted: {}".format(tab.highlighted))
 
         # Process new cursor highlighting
         for pos in tab.highlighted:

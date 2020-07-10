@@ -16,9 +16,9 @@ class LayoutResult:
 class Tab:
     def __init__(self):
         self.default_tuning = Tuning()
-        self.children = [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
+        self.children = [Bar(self)] + [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
         self.max_width = 100
-        self.cursor = Cursor(self)
+        self.cursor = Cursor(self, self.bar(0).chord(0))
 
     def bar(self, n):
         i = 0
@@ -28,6 +28,15 @@ class Tab:
                     return child
                 i += 1
 
+        return None
+
+    def bar_number(self, bar):
+        i = 0
+        for child in self.children:
+            if type(child) == Bar:
+                if child == bar:
+                    return i
+                i += 1
         return None
 
     def nbars(self):
@@ -55,9 +64,9 @@ class Tab:
         return None
 
     def layout(self) -> LayoutResult:
-        current_width = 0
-        system_start = True
-        current_bar_num = 0
+        current_width = 0                   # the width of the current working system
+        system_start = True                 # whether we're at a system start or not
+        current_bar_num = 0                 # the current bar number, beginning at 0
 
         cursor_highlight_start = [0, 0]     # line, column
         cursor_highlight_end = [0, 0]
@@ -65,27 +74,34 @@ class Tab:
         cursor_strong_highlight_start = [0, 0]
         cursor_strong_highlight_end = [0, 0]
 
-        padding_left = 1
+        padding_left = 1                    # global score padding
         padding_top = 1
 
-        lines = ["" * padding_top]
-        vertical_offset = 0 + padding_top
+        bar_padding_bottom = 1
 
-        current_val = ""
+        lines = ["" * padding_top]
+        vertical_offset = 0 + padding_top   # how far 'down' we are currently
+
+        prev_element = None
         for child in self.children:
             element_type = type(child)
             if element_type == Text:
+                if prev_element and type(prev_element) == Bar:
+                    vertical_offset += prev_element.get_height()
+
                 lines.append("")
                 for line in child.layout():
                     lines.append(line)
                     vertical_offset += 1
                 lines.append("")
-                vertical_offset += 2    # for above and below padding
+                vertical_offset += 2    # for top and below padding
+                system_start = True
+                current_width = 0
             elif element_type == Bar:
                 width = child.get_width(system_start)
                 if current_width + width > self.max_width:
                     current_width = width
-                    vertical_offset += 8    # TODO this is bar height, should be got from bar layout in future
+                    vertical_offset += child.get_height() + bar_padding_bottom
                     system_start = True
                 else:
                     current_width += width
@@ -94,18 +110,18 @@ class Tab:
                 bar_lines = child.layout(system_start)
 
                 # Decide where to put the cursor
-                if current_bar_num == self.cursor.bar():
-                    cols = child.get_cursor_pos(system_start, self.cursor.column())
+                if child == self.cursor.bar():
+                    cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.chord)
                     horizontal = padding_left + cols
                     if not system_start:
                         horizontal += len(lines[vertical_offset])
                     cursor_highlight_start = [vertical_offset, horizontal]
-                    cursor_highlight_end = [vertical_offset + child.nstrings() - 1, horizontal]
+                    cursor_highlight_end = [vertical_offset + child.nstrings() - 1, horizontal + curs_width - 1]
 
                     # Specific string highlighting
                     bottom_line = vertical_offset + child.nstrings() - 1
                     cursor_strong_highlight_start = [bottom_line - self.cursor.string, horizontal]
-                    cursor_strong_highlight_end   = [bottom_line - self.cursor.string, horizontal]
+                    cursor_strong_highlight_end   = [bottom_line - self.cursor.string, horizontal + curs_width - 1]
 
                 for i in range(len(bar_lines)):
                     ind = i + vertical_offset
@@ -116,6 +132,8 @@ class Tab:
 
                 system_start = False
                 current_bar_num += 1
+
+            prev_element = child
 
         highlighted = []
         for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):

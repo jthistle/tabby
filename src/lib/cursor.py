@@ -2,34 +2,24 @@
 from util.logger import logger
 
 class Cursor:
-    def __init__(self, tab):
+    def __init__(self, tab, initial_chord):
         self.tab = tab
-        self.position = [0, 0]      # bar, column
+        self.chord = initial_chord
         self.string = 0             # starts from bottom
 
     def bar(self):
-        return self.position[0]
-
-    def column(self):
-        return self.position[1]
+        return self.chord.parent
 
     def move(self, direction):
-        """-1 for left, +1 for left"""
-        cur_bar = self.tab.bar(self.position[0])
-        new_col = self.position[1] + direction
-        new_bar = self.position[0]
-        if new_col >= cur_bar.width or new_col < 0:
-            new_bar += direction
-            new_col = 0 if direction == 1 else cur_bar.width - 1
-            if new_bar >= self.tab.nbars() or new_bar < 0:
-                # Can't move further, no op
-                return
-
-        self.position = [new_bar, new_col]
+        """-1 for left, +1 for right"""
+        if direction == -1:
+            self.chord = self.chord.prev_chord() or self.chord
+        elif direction == 1:
+            self.chord = self.chord.next_chord() or self.chord
 
     def move_string(self, direction):
         """+1 for up, -1 for down"""
-        cur_bar = self.tab.bar(self.position[0])
+        cur_bar = self.bar()
         max_s = cur_bar.nstrings() - 1
 
         self.string = min(max_s, max(0, self.string + direction))
