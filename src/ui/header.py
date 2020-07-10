@@ -1,5 +1,5 @@
 import curses
-
+from meta.info import NAME
 
 class Header:
     def __init__(self):
@@ -14,7 +14,7 @@ class Header:
         self.draw()
 
     def update(self):
-        header_txt = self.filename + " - Tab Editor"
+        header_txt = "{} - {}".format(self.filename, NAME)
         self.win.addstr(0, (self.width - len(header_txt)) // 2, header_txt)
 
     def draw(self):

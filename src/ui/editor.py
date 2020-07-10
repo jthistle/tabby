@@ -6,6 +6,7 @@ from lib.tab import Tab
 from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
+from .help import HELP_STR
 
 class Editor:
     def __init__(self):
@@ -27,7 +28,15 @@ class Editor:
         self.update()
         self.draw()
 
+    def help_update(self):
+        self.win.clear()
+        self.win.addstr(0, 0, HELP_STR)
+
     def update(self):
+        if self.mode == Mode.HELP:
+            self.help_update()
+            return
+
         self.win.clear()
         tab = self.current_tab.layout()
         self.win.addstr(self.viewport_pos, 0, tab.txt)
@@ -81,6 +90,10 @@ class Editor:
         else:
             self.console.echo("-- {} MODE --".format(mode_name(new_mode)))
 
+        # Must be done last
+        if old_mode == Mode.HELP or new_mode == Mode.HELP:
+            self.update()
+
     def handle_cmd(self, raw_cmd):
         cmd = parse_cmd(raw_cmd)
         if not cmd:
@@ -89,17 +102,15 @@ class Editor:
 
         action = cmd.get("action")
         if action == Action.HELP:
-            cmd_str = ""
             if len(cmd.get("parts")) == 1:
-                # TODO display help screen
-                cmd_str = cmd.get("parts")[0]
+                self.change_mode(Mode.HELP)
             else:
                 cmd_str = cmd.get("parts")[1]
-            help_str = get_help(cmd_str)
-            if help_str is None:
-                self.console.error("Command {} doesn't exist!".format(cmd_str))
-            else:
-                self.console.echo("usage: " + help_str.format(cmd_str))
+                help_str = get_help(cmd_str)
+                if help_str is None:
+                    self.console.error("Command {} doesn't exist!".format(cmd_str))
+                else:
+                    self.console.echo("usage: " + help_str.format(cmd_str))
         elif action == Action.SAVE_QUIT:
             # TODO save
             return False
@@ -131,6 +142,8 @@ class Editor:
         elif self.mode == Mode.VIEW:
             if key == "e":
                 self.change_mode(Mode.EDIT)
+            elif key == "h":
+                self.change_mode(Mode.HELP)
             elif key == ":":
                 self.console.begin_cmd()
         elif self.mode == Mode.EDIT:
