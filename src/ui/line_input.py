@@ -43,8 +43,8 @@ class LineInput:
         elif key == "KEY_BACKSPACE":
             if self.cursor_pos > 0:
                 self.val = self.val[:self.cursor_pos - 1] + self.val[self.cursor_pos:]
+                self.cursor_pos -= 1
             self.on_val_change(self.val)
-            self.cursor_pos -= 1
 
         self.update_cursor()
 

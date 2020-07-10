@@ -5,7 +5,7 @@ from .cmd_parser import parse_cmd, Action, ActionMod, get_help
 from lib.tab import Tab
 from util.logger import logger
 from .colour_pairs import Pair
-
+from .mode import Mode, mode_name
 
 class Editor:
     def __init__(self):
@@ -19,6 +19,9 @@ class Editor:
 
         self.current_tab = Tab()
 
+        self.mode = Mode.VIEW
+        self.first_entry = True     # first entry after moving the cursor to this position
+
         # Initial update
         curses.curs_set(0)
         self.update()
@@ -28,7 +31,9 @@ class Editor:
         self.win.clear()
         tab = self.current_tab.layout()
         self.win.addstr(self.viewport_pos, 0, tab.txt)
-        self.update_cursor(tab)
+
+        if self.mode == Mode.EDIT:
+            self.update_cursor(tab)
 
     def update_cursor(self, tab = None, clear = False):
         # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
@@ -38,12 +43,7 @@ class Editor:
 
         if clear:
             # Remove last highlighting if only updating cursor
-            for pos in self.last_cursor_draw:
-                # Bottom eight bits ignores formatting/colours
-                ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
-                self.win.addch(pos[0], pos[1], ch, 0)
-
-        logger.debug("Hihglighted: {}".format(tab.highlighted))
+            self.clear_cursor()
 
         # Process new cursor highlighting
         for pos in tab.highlighted:
@@ -57,6 +57,29 @@ class Editor:
         # Should be enough - we expect tab.strong to always be contained within tab.highlighted
         self.last_cursor_draw = tab.highlighted
 
+    def clear_cursor(self):
+        for pos in self.last_cursor_draw:
+            # Bottom eight bits ignores formatting/colours
+            ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
+            self.win.addch(pos[0], pos[1], ch, 0)
+
+    def change_mode(self, new_mode):
+        old_mode = self.mode
+        if new_mode == old_mode:
+            return
+
+        if old_mode == Mode.EDIT:
+            self.clear_cursor()
+
+        self.mode = new_mode
+        if new_mode == Mode.EDIT:
+            self.update_cursor()
+            self.first_entry = True
+
+        if new_mode == Mode.VIEW:
+            self.console.clear()
+        else:
+            self.console.echo("-- {} MODE --".format(mode_name(new_mode)))
 
     def handle_cmd(self, raw_cmd):
         cmd = parse_cmd(raw_cmd)
@@ -87,6 +110,11 @@ class Editor:
 
         return True
 
+    def post_cursor_move(self):
+        self.first_entry = True
+        self.update_cursor(tab=None, clear=True)
+        self.draw()
+
     def handle_input(self):
         if self.console.in_cmd:
             res = self.console.handle_input()
@@ -99,21 +127,35 @@ class Editor:
 
         key = self.win.getkey()
         if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
-            return False
-        elif key == ":":
-            self.console.begin_cmd()
-        elif key == "KEY_RIGHT" or key == "KEY_LEFT":
-            direction = 1 if key == "KEY_RIGHT" else -1
-            self.current_tab.cursor.move(direction)
-            self.update_cursor(tab=None, clear=True)
-            self.draw()
-        elif key == "KEY_UP" or key == "KEY_DOWN":
-            direction = 1 if key == "KEY_UP" else -1
-            self.current_tab.cursor.move_string(direction)
-            self.update_cursor(tab=None, clear=True)
-            self.draw()
-        else:
-            self.console.echo("Char: {}".format(key).replace("\n", "newline"))
+            self.change_mode(Mode.VIEW)
+        elif self.mode == Mode.VIEW:
+            if key == "e":
+                self.change_mode(Mode.EDIT)
+            elif key == ":":
+                self.console.begin_cmd()
+        elif self.mode == Mode.EDIT:
+            if key == "KEY_RIGHT" or key == "KEY_LEFT":
+                direction = 1 if key == "KEY_RIGHT" else -1
+                self.current_tab.cursor.move(direction)
+                self.post_cursor_move()
+            elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
+                direction = 1 if key == "kRIT5" else -1
+                self.current_tab.cursor.move_big(direction)
+                self.post_cursor_move()
+            elif key == "KEY_UP" or key == "KEY_DOWN":
+                direction = 1 if key == "KEY_UP" else -1
+                self.current_tab.cursor.move_string(direction)
+                self.post_cursor_move()
+            elif len(key) == 1:
+                note = self.current_tab.cursor.note()
+                if self.first_entry:
+                    note.value = key
+                else:
+                    note.value += key
+                self.update()
+                self.first_entry = False
+
+        # self.console.echo("Char: {}".format(key).replace("\n", "newline"))
 
         return True
 

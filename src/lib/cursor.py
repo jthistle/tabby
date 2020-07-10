@@ -10,12 +10,31 @@ class Cursor:
     def bar(self):
         return self.chord.parent
 
+    def note(self):
+        return self.chord.get_note(self.string)
+
     def move(self, direction):
         """-1 for left, +1 for right"""
         if direction == -1:
             self.chord = self.chord.prev_chord() or self.chord
         elif direction == 1:
             self.chord = self.chord.next_chord() or self.chord
+
+    def move_big(self, direction):
+        """Moves around by the bar. -1 for left, +1 for right"""
+        if direction == -1:
+            prev_bar = None
+            if self.chord.parent.chord_number(self.chord) == 0:
+                prev_bar = self.chord.parent.prev_bar()
+
+            if not prev_bar:
+                prev_bar = self.bar()
+            self.chord = prev_bar.chord(0)
+        elif direction == 1:
+            next_bar = self.chord.parent.next_bar()
+            if not next_bar:
+                next_bar = self.bar()
+            self.chord = next_bar.chord(0)
 
     def move_string(self, direction):
         """+1 for up, -1 for down"""
