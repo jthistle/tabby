@@ -43,15 +43,14 @@ class Editor:
 
         self.update_cursor(tab)
 
-    def update_cursor(self, tab = None, clear = False):
+    def update_cursor(self, tab = None):
         # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
         # In the future, just work out a way of doing it without doing this.
         if not tab:
             tab = self.current_tab.layout()
 
-        if clear:
-            # Remove last highlighting if only updating cursor
-            self.clear_cursor()
+        # Remove last highlighting if only updating cursor
+        self.clear_cursor()
 
         # Process new cursor highlighting
         for pos in tab.highlighted:
@@ -78,13 +77,12 @@ class Editor:
         if new_mode == old_mode:
             return
 
-        if old_mode == Mode.EDIT:
-            self.update_cursor()
-
         self.mode = new_mode
         if new_mode == Mode.EDIT:
-            self.update_cursor()
             self.first_entry = True
+
+        if old_mode in (Mode.EDIT, Mode.VIEW):
+            self.update_cursor()
 
         if new_mode == Mode.VIEW:
             self.console.clear()
@@ -117,6 +115,19 @@ class Editor:
             return False
         elif action == Action.QUIT:
             return False
+        elif action == Action.SET_TUNING:
+            strings = [x.strip() for x in cmd.get("parts")[1:] if x.strip() != ""]
+            if len(strings) == 0:
+                self.console.error("Must specify at least one string for tuning!")
+                return True
+
+            if self.current_tab.tuning_causes_loss(strings):
+                confirm = self.console.confirm("Setting this tuning will cause loss of data. Continue?")
+                if not confirm:
+                    return True
+
+            self.current_tab.set_tuning(strings)
+            self.update()
         else:
             self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
@@ -124,7 +135,7 @@ class Editor:
 
     def post_cursor_move(self):
         self.first_entry = True
-        self.update_cursor(tab=None, clear=True)
+        self.update_cursor(tab=None)
         self.draw()
 
     def handle_input(self):
@@ -148,10 +159,6 @@ class Editor:
             direction = 1 if key == "kRIT5" else -1
             self.current_tab.cursor.move_big(direction)
             self.post_cursor_move()
-        elif key == "KEY_UP" or key == "KEY_DOWN":
-            direction = 1 if key == "KEY_UP" else -1
-            self.current_tab.cursor.move_string(direction)
-            self.post_cursor_move()
         elif self.mode == Mode.VIEW:
             if key == "e":
                 self.change_mode(Mode.EDIT)
@@ -160,7 +167,11 @@ class Editor:
             elif key == ":":
                 self.console.begin_cmd()
         elif self.mode == Mode.EDIT:
-            if len(key) == 1:
+            if key == "KEY_UP" or key == "KEY_DOWN":
+                direction = 1 if key == "KEY_UP" else -1
+                self.current_tab.cursor.move_string(direction)
+                self.post_cursor_move()
+            elif len(key) == 1:
                 note = self.current_tab.cursor.note()
                 if self.first_entry:
                     note.value = key

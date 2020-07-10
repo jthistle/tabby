@@ -72,6 +72,19 @@ class Console:
 
         return res
 
+    def confirm(self, msg):
+        curses.curs_set(1)
+        self.echo("{} [Y/N]".format(msg))
+
+        key = self.win.getkey()
+        res = False
+        if key.lower() == "y":
+            res = True
+
+        curses.curs_set(0)
+        self.echo("")
+        return res
+
     def update(self):
         text_attr = 0
         if self.in_error_state:

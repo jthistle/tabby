@@ -10,13 +10,21 @@ class Tuning:
         else:
             self.strings = DEFAULT_TUNING
 
+    def get_width(self):
+        m = 1
+        for s in self.strings:
+            m = max(len(s), m)
+        return m
+
     def parse_str(self, val):
-        strings = [x.strip() for x in val.capitalize().split()]
+        strings = [x.strip()[:2] for x in val.upper().split()]
         final = []
 
         for string in strings:
             use_str = string
-            if use_str in final:
+            if len(use_str) == 2:
+                use_str = use_str.capitalize()      # bb -> Bb
+            elif use_str in final:
                 use_str = use_str.lower()
             final.append(use_str)
 

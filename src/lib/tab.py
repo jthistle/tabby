@@ -20,6 +20,11 @@ class Tab:
         self.max_width = 100
         self.cursor = Cursor(self, self.bar(0).chord(0))
 
+    def bars(self):
+        for child in self.children:
+            if type(child) == Bar:
+                yield child
+
     def bar(self, n):
         i = 0
         for child in self.children:
@@ -62,6 +67,19 @@ class Tab:
                 return children[i]
 
         return None
+
+    def tuning_causes_loss(self, new_tuning: [str]):
+        for bar in self.bars():
+            if bar.tuning_causes_loss(new_tuning):
+                return True
+        return False
+
+    def set_tuning(self, strings):
+        new_tuning = Tuning(" ".join(strings))
+        self.default_tuning = new_tuning
+        for bar in self.bars():
+            bar.set_tuning(new_tuning)
+        self.cursor.string = len(strings) - 1
 
     def layout(self) -> LayoutResult:
         current_width = 0                   # the width of the current working system

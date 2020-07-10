@@ -6,6 +6,7 @@ class Action(Enum):
     SAVE_QUIT = 2
     SAVE = 3
     HELP = 4
+    SET_TUNING = 5
 
 
 class ActionMod(Enum):
@@ -18,6 +19,7 @@ ALIASES = {
     Action.SAVE_QUIT: ["wq"],
     Action.SAVE: ["w", "write", "s", "save"],
     Action.HELP: ["h", "help"],
+    Action.SET_TUNING: ["t", "tuning"],
 }
 
 
@@ -26,6 +28,7 @@ HELP_STRINGS = {
     Action.SAVE_QUIT: "{}: quit tab editor, saving any unsaved changes",
     Action.SAVE: "{}: save any unsaved changes",
     Action.HELP: "{} [command]: get help with the usage of a command",
+    Action.SET_TUNING: "{} <string 1> [string 2] ...: set the tuning of the tab"
 }
 
 

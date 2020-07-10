@@ -5,7 +5,7 @@ class Chord:
     def __init__(self, parent, position):
         self.parent = parent
         self.position = position
-        self.notes = []
+        self.notes = []             # keep ordered by ascending string
 
     def width(self):
         max_w = 1
@@ -27,7 +27,12 @@ class Chord:
                 return note
 
         new_note = Note(string, "")
-        self.notes.append(new_note)
+        i = 0
+        for note in self.notes:
+            if note.string > string:
+                break
+            i += 1
+        self.notes.insert(i, new_note)
         return new_note
 
     def next_chord(self):
@@ -49,3 +54,9 @@ class Chord:
             return bar.chord(bar.nchords() - 1)
 
         return self.parent.chord(my_ind - 1)
+
+    def tuning_causes_loss(self, new_max):
+        for note in self.notes:
+            if note.string > new_max:
+                return True
+        return False

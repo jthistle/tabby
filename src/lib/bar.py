@@ -13,11 +13,6 @@ class Bar:
         for i in range(DEFAULT_WIDTH):
             self.chords.append(Chord(self, i))
 
-        ## DEBUG - testing
-        chrd = self.chords[0]
-        note = chrd.get_note(1)
-        note.value = "12"
-
     def nstrings(self):
         return len(self.tuning.strings)
 
@@ -30,18 +25,19 @@ class Bar:
             width += chord.width()
 
         # 2 for padding either side, 1 for end barline, 2 if system start for tuning and start barline
-        return width + 2 + 1 + (2 if is_system_start else 0)
+        return width + 2 + 1 + (self.tuning.get_width() + 1 if is_system_start else 0)
 
     def get_height(self):
         return self.nstrings()
 
     def layout(self, is_system_start) -> [str]:
         lines = []
+        tuning_width = self.tuning.get_width()
         for i in range(self.nstrings()):
             line = []
 
             if is_system_start:
-                line.append(self.tuning.at(i))
+                line.append(self.tuning.at(i).ljust(tuning_width, " "))
                 line.append("|")
 
             # Initial padding
@@ -73,7 +69,7 @@ class Bar:
                 break
             internal_columns += chord.width()
 
-        pos = 1 + (2 if is_system_start else 0) + internal_columns
+        pos = 1 + (self.tuning.get_width() + 1 if is_system_start else 0) + internal_columns
         return pos, width
 
     def chord(self, n):
@@ -96,3 +92,21 @@ class Bar:
 
         return self.parent.bar(my_ind - 1)
 
+    def tuning_causes_loss(self, new_tuning):
+        if len(new_tuning) >= self.nstrings():
+            return False
+        new_max = len(new_tuning) - 1
+        for chord in self.chords:
+            if chord.tuning_causes_loss(new_max):
+                return True
+        return False
+
+    def set_tuning(self, new_tuning):
+        new_max = len(new_tuning.strings) - 1
+        for chord in self.chords:
+            for i in range(len(chord.notes) - 1, -1, -1):
+                if chord.notes[i].string > new_max:
+                    del chord.notes[i]
+                else:
+                    break
+        self.tuning = new_tuning
