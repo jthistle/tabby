@@ -74,17 +74,3 @@ class Cursor:
             new_note = Note(note.string, note.value)
             new_notes.append(new_note)
         self.chord.notes = new_notes
-
-    def duplicate_note(self, direction):
-        value = self.note().value
-        if value == "":
-            return
-
-        end = 0
-        if direction == 1:
-            end = self.chord.parent.nstrings() - 1
-
-        initial = self.note().string
-        for i in range(initial + direction, end + direction, direction):
-            new_note = self.chord.get_note(i)
-            new_note.value = value

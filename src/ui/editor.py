@@ -11,6 +11,7 @@ from .mode import Mode, mode_name
 from .help import get_help
 
 from lib.undo.set_note_value import UndoSetNoteValue
+from lib.undo.duplicate_note import UndoDuplicateNote
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -211,7 +212,11 @@ class Editor:
                 self.update()
             elif key == "KEY_SR" or key == "KEY_SF":
                 direction = 1 if key == "KEY_SR" else -1
-                self.cursor.duplicate_note(direction)
+                note = self.cursor.note()
+                string = note.string
+                chord = self.cursor.chord_number()
+                bar = self.cursor.bar_number()
+                self.do(UndoDuplicateNote(bar, chord, string, direction))
                 self.update()
             elif key == " ":
                 self.cursor.move(2)
