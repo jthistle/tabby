@@ -147,6 +147,16 @@ class Editor:
 
             self.current_tab.set_tuning(strings)
             self.update()
+        elif action == Action.UNDO:
+            res = self.current_tab.undo_stack.undo()
+            if not res:
+                self.console.error("Nothing to undo!")
+            self.update()
+        elif action == Action.REDO:
+            res = self.current_tab.undo_stack.redo()
+            if not res:
+                self.console.error("Nothing to redo!")
+            self.update()
         else:
             self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 

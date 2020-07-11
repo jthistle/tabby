@@ -99,7 +99,15 @@ ACTION_HELP_PAGES = {
         - eflat:            guitar Eb tuning (each string down a semitone)
 
     If changing the tuning will decrease the number of strings and cause notes to be deleted, a warning will be shown."""
-    }
+    },
+    Action.UNDO: {
+        "usages": ":{cmd}",
+        "desc": "Undo the last undoable action."
+    },
+    Action.REDO: {
+        "usages": ":{cmd}",
+        "desc": "Redo the last undoable action."
+    },
 }
 
 for action in ACTION_HELP_PAGES:
