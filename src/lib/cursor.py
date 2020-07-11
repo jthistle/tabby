@@ -1,5 +1,6 @@
 
 from util.logger import logger
+from .note import Note
 
 class Cursor:
     def __init__(self, tab, initial_chord):
@@ -14,11 +15,13 @@ class Cursor:
         return self.chord.get_note(self.string)
 
     def move(self, direction):
-        """-1 for left, +1 for right"""
-        if direction == -1:
-            self.chord = self.chord.prev_chord() or self.chord
-        elif direction == 1:
-            self.chord = self.chord.next_chord() or self.chord
+        """- for left, + for right"""
+        if direction < 0:
+            for i in range(abs(direction)):
+                self.chord = self.chord.prev_chord() or self.chord
+        elif direction > 0:
+            for i in range(direction):
+                self.chord = self.chord.next_chord() or self.chord
 
     def move_big(self, direction):
         """Moves around by the bar. -1 for left, +1 for right"""
@@ -52,3 +55,30 @@ class Cursor:
         note = self.note()
         if note.value != "":
             note.value = note.value[1:]
+
+    def clear_note(self):
+        self.note().value = ""
+
+    def clear_chord(self):
+        self.chord.clear()
+
+    def replace_chord(self, src):
+        new_notes = []
+        for note in src.notes:
+            new_note = Note(note.string, note.value)
+            new_notes.append(new_note)
+        self.chord.notes = new_notes
+
+    def duplicate_note(self, direction):
+        value = self.note().value
+        if value == "":
+            return
+
+        end = 0
+        if direction == 1:
+            end = self.chord.parent.nstrings() - 1
+
+        initial = self.note().string
+        for i in range(initial + direction, end + direction, direction):
+            new_note = self.chord.get_note(i)
+            new_note.value = value

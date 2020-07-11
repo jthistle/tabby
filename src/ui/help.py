@@ -35,13 +35,17 @@ esc - back to view mode
 
 = view mode (default):
 
-:   - open console
-esc - exit console
+:               - open console
+esc             - exit console
+c               - copy selected chord
+ctrl + delete   - clear selected chord
 
 = edit mode:
 
 arrow keys        - move cursor
 ctrl + arrow keys - move cursor in large steps
+delete            - clear selected note
+ctrl + delete     - clear selected chord
 
 ---
 

@@ -1,4 +1,6 @@
 import curses
+import re
+
 from .console import Console
 from .header import Header
 from .cmd_parser import parse_cmd, Action, ActionMod
@@ -7,6 +9,9 @@ from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .help import get_help
+
+
+ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
 class Editor:
     def __init__(self):
@@ -23,6 +28,7 @@ class Editor:
         self.mode = Mode.VIEW
         self.first_entry = True     # first entry after moving the cursor to this position
         self.current_help = ""
+        self.clipboard = None
 
         # Initial update
         curses.curs_set(0)
@@ -170,18 +176,39 @@ class Editor:
                 self.change_mode(Mode.HELP)
             elif key == ":":
                 self.console.begin_cmd()
+            elif key == "c":
+                self.clipboard = self.current_tab.cursor.chord
+            elif key == "v":
+                if self.clipboard is None:
+                    self.console.error("Nothing to paste!")
+                else:
+                    self.current_tab.cursor.replace_chord(self.clipboard)
+                    self.update()
+            elif key == "kDC5":
+                self.current_tab.cursor.clear_chord()
+                self.update()
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
                 direction = 1 if key == "KEY_UP" else -1
                 self.current_tab.cursor.move_string(direction)
                 self.post_cursor_move()
             elif key == "KEY_DC":
-                self.current_tab.cursor.delete()
+                self.current_tab.cursor.clear_note()
                 self.update()
             elif key == "KEY_BACKSPACE":
                 self.current_tab.cursor.backspace()
                 self.update()
-            elif len(key) == 1:
+            elif key == "kDC5":
+                self.current_tab.cursor.clear_chord()
+                self.update()
+            elif key == "KEY_SR" or key == "KEY_SF":
+                direction = 1 if key == "KEY_SR" else -1
+                self.current_tab.cursor.duplicate_note(direction)
+                self.update()
+            elif key == " ":
+                self.current_tab.cursor.move(2)
+                self.post_cursor_move()
+            elif len(key) == 1 and ACCEPTED_NOTE_VALS.match(key):
                 note = self.current_tab.cursor.note()
                 if self.first_entry:
                     note.value = key
@@ -190,7 +217,7 @@ class Editor:
                 self.update()
                 self.first_entry = False
 
-        # self.console.echo("Char: {}".format(key).replace("\n", "newline"))
+        # self.console.echo("Char: {}".format(repr(key)).replace("\n", "newline"))
 
         return True
 

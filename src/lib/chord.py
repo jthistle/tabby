@@ -21,7 +21,13 @@ class Chord:
 
         return [x for x in reversed(lines)]
 
+    def clear(self):
+        self.notes = []
+
     def get_note(self, string):
+        if string >= self.parent.nstrings() or string < 0:
+            return None
+
         for note in self.notes:
             if note.string == string:
                 return note
