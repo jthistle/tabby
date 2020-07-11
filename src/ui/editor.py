@@ -1,12 +1,12 @@
 import curses
 from .console import Console
 from .header import Header
-from .cmd_parser import parse_cmd, Action, ActionMod, get_help
+from .cmd_parser import parse_cmd, Action, ActionMod
 from lib.tab import Tab
 from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
-from .help import HELP_STR
+from .help import get_help
 
 class Editor:
     def __init__(self):
@@ -22,6 +22,7 @@ class Editor:
 
         self.mode = Mode.VIEW
         self.first_entry = True     # first entry after moving the cursor to this position
+        self.current_help = ""
 
         # Initial update
         curses.curs_set(0)
@@ -30,7 +31,7 @@ class Editor:
 
     def help_update(self):
         self.win.clear()
-        self.win.addstr(0, 0, HELP_STR)
+        self.win.addstr(0, 0, self.current_help)
 
     def update(self):
         if self.mode == Mode.HELP:
@@ -102,14 +103,16 @@ class Editor:
         action = cmd.get("action")
         if action == Action.HELP:
             if len(cmd.get("parts")) == 1:
-                self.change_mode(Mode.HELP)
+                self.current_help = get_help()
             else:
                 cmd_str = cmd.get("parts")[1]
                 help_str = get_help(cmd_str)
                 if help_str is None:
                     self.console.error("Command {} doesn't exist!".format(cmd_str))
-                else:
-                    self.console.echo("usage: " + help_str.format(cmd_str))
+                    return True
+                self.current_help = help_str
+
+            self.change_mode(Mode.HELP)
         elif action == Action.SAVE_QUIT:
             # TODO save
             return False

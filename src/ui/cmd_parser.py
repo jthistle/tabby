@@ -23,13 +23,11 @@ ALIASES = {
 }
 
 
-HELP_STRINGS = {
-    Action.QUIT: "{}: quit tab editor",
-    Action.SAVE_QUIT: "{}: quit tab editor, saving any unsaved changes",
-    Action.SAVE: "{}: save any unsaved changes",
-    Action.HELP: "{} [command]: get help with the usage of a command",
-    Action.SET_TUNING: "{} <string 1> [string 2] ...: set the tuning of the tab"
-}
+def action_from_alias(alias):
+    for action in ALIASES:
+        if alias in ALIASES[action]:
+            return action
+    return None
 
 
 def parse_cmd(cmd):
@@ -49,10 +47,3 @@ def parse_cmd(cmd):
             }
     return None
 
-
-def get_help(cmd_str):
-    for action in ALIASES:
-        if cmd_str in ALIASES[action]:
-            return HELP_STRINGS[action]
-
-    return None
