@@ -27,22 +27,23 @@ class Editor:
         # Initial update
         curses.curs_set(0)
         self.update()
-        self.draw()
 
     def help_update(self):
         self.win.clear()
         self.win.addstr(0, 0, self.current_help)
+        self.draw()
 
     def update(self):
         if self.mode == Mode.HELP:
             self.help_update()
             return
 
-        self.win.clear()
+        self.win.erase()
         tab = self.current_tab.layout()
         self.win.addstr(self.viewport_pos, 0, tab.txt)
 
         self.update_cursor(tab)
+        self.draw()
 
     def update_cursor(self, tab = None):
         # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
@@ -174,6 +175,12 @@ class Editor:
                 direction = 1 if key == "KEY_UP" else -1
                 self.current_tab.cursor.move_string(direction)
                 self.post_cursor_move()
+            elif key == "KEY_DC":
+                self.current_tab.cursor.delete()
+                self.update()
+            elif key == "KEY_BACKSPACE":
+                self.current_tab.cursor.backspace()
+                self.update()
             elif len(key) == 1:
                 note = self.current_tab.cursor.note()
                 if self.first_entry:

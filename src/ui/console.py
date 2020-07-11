@@ -17,13 +17,10 @@ class Console:
 
         # Initial update
         self.update()
-        self.draw()
-
 
     def set_output(self, msg):
         self.output = msg
         self.update()
-        self.draw()
 
     def echo(self, msg):
         self.in_error_state = False
@@ -90,8 +87,9 @@ class Console:
         if self.in_error_state:
             text_attr = curses.color_pair(Pair.WHITE_RED.value)
 
-        self.win.clear()
+        self.win.erase()
         self.win.addstr(0, 0, self.output, text_attr)
+        self.draw()
 
     def draw(self):
         self.win.refresh()
