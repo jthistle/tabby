@@ -2,19 +2,18 @@
 from .note import Note
 
 class Chord:
-    def __init__(self, parent, position):
+    def __init__(self, parent):
         self.parent = parent
-        self.position = position
         self.notes = []             # keep ordered by ascending string
 
-    def width(self):
+    def get_width(self):
         max_w = 1
         for note in self.notes:
-            max_w = max(max_w, note.width())
+            max_w = max(max_w, note.get_width())
         return max_w
 
     def layout(self) -> [str]:
-        width = self.width()
+        width = self.get_width()
         lines = ["-" * width] * self.parent.nstrings()
         for note in self.notes:
             lines[note.string] = note.layout().ljust(width, "-")
@@ -32,7 +31,7 @@ class Chord:
             if note.string == string:
                 return note
 
-        new_note = Note(string, "")
+        new_note = Note(self, string, "")
         i = 0
         for note in self.notes:
             if note.string > string:

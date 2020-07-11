@@ -10,6 +10,7 @@ from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .help import get_help
 
+from lib.undo.set_note_value import UndoSetNoteValue
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -33,6 +34,13 @@ class Editor:
         # Initial update
         curses.curs_set(0)
         self.update()
+
+    @property
+    def cursor(self):
+        return self.current_tab.cursor
+
+    def do(self, action):
+        self.current_tab.do(action)
 
     def help_update(self):
         self.win.clear()
@@ -163,11 +171,11 @@ class Editor:
             self.change_mode(Mode.VIEW)
         elif key == "KEY_RIGHT" or key == "KEY_LEFT":
             direction = 1 if key == "KEY_RIGHT" else -1
-            self.current_tab.cursor.move(direction)
+            self.cursor.move(direction)
             self.post_cursor_move()
         elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
             direction = 1 if key == "kRIT5" else -1
-            self.current_tab.cursor.move_big(direction)
+            self.cursor.move_big(direction)
             self.post_cursor_move()
         elif self.mode == Mode.VIEW:
             if key == "e":
@@ -177,43 +185,48 @@ class Editor:
             elif key == ":":
                 self.console.begin_cmd()
             elif key == "c":
-                self.clipboard = self.current_tab.cursor.chord
+                self.clipboard = self.cursor.chord
             elif key == "v":
                 if self.clipboard is None:
                     self.console.error("Nothing to paste!")
                 else:
-                    self.current_tab.cursor.replace_chord(self.clipboard)
+                    self.cursor.replace_chord(self.clipboard)
                     self.update()
             elif key == "kDC5":
-                self.current_tab.cursor.clear_chord()
+                self.cursor.clear_chord()
                 self.update()
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
                 direction = 1 if key == "KEY_UP" else -1
-                self.current_tab.cursor.move_string(direction)
+                self.cursor.move_string(direction)
                 self.post_cursor_move()
             elif key == "KEY_DC":
-                self.current_tab.cursor.clear_note()
+                self.cursor.clear_note()
                 self.update()
             elif key == "KEY_BACKSPACE":
-                self.current_tab.cursor.backspace()
+                self.cursor.backspace()
                 self.update()
             elif key == "kDC5":
-                self.current_tab.cursor.clear_chord()
+                self.cursor.clear_chord()
                 self.update()
             elif key == "KEY_SR" or key == "KEY_SF":
                 direction = 1 if key == "KEY_SR" else -1
-                self.current_tab.cursor.duplicate_note(direction)
+                self.cursor.duplicate_note(direction)
                 self.update()
             elif key == " ":
-                self.current_tab.cursor.move(2)
+                self.cursor.move(2)
                 self.post_cursor_move()
             elif len(key) == 1 and ACCEPTED_NOTE_VALS.match(key):
-                note = self.current_tab.cursor.note()
+                note = self.cursor.note()
+                string = note.string
+                chord = self.cursor.chord_number()
+                bar = self.cursor.bar_number()
+                value = note.value
                 if self.first_entry:
-                    note.value = key
+                    value = key
                 else:
-                    note.value += key
+                    value += key
+                self.do(UndoSetNoteValue(bar, chord, string, value))
                 self.update()
                 self.first_entry = False
 

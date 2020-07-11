@@ -4,7 +4,7 @@ from .tuning import Tuning
 from .text import Text
 from .cursor import Cursor
 from util.logger import logger
-
+from .undo.stack import UndoStack
 
 class LayoutResult:
     def __init__(self, txt, highlighted = None, strong = None):
@@ -19,6 +19,11 @@ class Tab:
         self.children = [Bar(self)] + [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
         self.max_width = 100
         self.cursor = Cursor(self, self.bar(0).chord(0))
+        self.undo_stack = UndoStack(self)
+
+    def do(self, action):
+        self.undo_stack.do(action)
+        self.undo_stack.redo()
 
     def bars(self):
         for child in self.children:

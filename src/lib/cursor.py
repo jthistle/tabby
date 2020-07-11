@@ -14,6 +14,12 @@ class Cursor:
     def note(self):
         return self.chord.get_note(self.string)
 
+    def bar_number(self):
+        return self.chord.parent.parent.bar_number(self.chord.parent)
+
+    def chord_number(self):
+        return self.chord.parent.chord_number(self.chord)
+
     def move(self, direction):
         """- for left, + for right"""
         if direction < 0:

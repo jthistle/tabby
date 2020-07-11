@@ -11,7 +11,7 @@ class Bar:
         self.tuning = self.parent.default_tuning
 
         for i in range(DEFAULT_WIDTH):
-            self.chords.append(Chord(self, i))
+            self.chords.append(Chord(self))
 
     def nstrings(self):
         return len(self.tuning.strings)
@@ -22,7 +22,7 @@ class Bar:
     def get_width(self, is_system_start):
         width = 0
         for chord in self.chords:
-            width += chord.width()
+            width += chord.get_width()
 
         # 2 for padding either side, 1 for end barline, 2 if system start for tuning and start barline
         return width + 2 + 1 + (self.tuning.get_width() + 1 if is_system_start else 0)
@@ -65,9 +65,9 @@ class Bar:
         width = 1
         for chord in self.chords:
             if chord == cursor_chord:
-                width = chord.width()
+                width = chord.get_width()
                 break
-            internal_columns += chord.width()
+            internal_columns += chord.get_width()
 
         pos = 1 + (self.tuning.get_width() + 1 if is_system_start else 0) + internal_columns
         return pos, width
