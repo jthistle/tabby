@@ -210,6 +210,7 @@ class Editor:
             if key == "e":
                 self.change_mode(Mode.EDIT)
             elif key == "h":
+                self.current_help = get_help()
                 self.change_mode(Mode.HELP)
             elif key == ":":
                 self.console.begin_cmd()
