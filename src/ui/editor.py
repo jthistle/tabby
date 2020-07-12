@@ -234,11 +234,14 @@ class Editor:
                 self.cursor.move_string(direction)
                 self.post_cursor_move()
             elif key == "KEY_DC":
-                self.cursor.clear_note()
+                self.do(UndoSetNoteValue(CursorState(self.cursor), ""))
                 self.update()
             elif key == "KEY_BACKSPACE":
-                self.cursor.backspace()
+                state = CursorState(self.cursor)
+                new_val = self.cursor.note().value[:-1]
+                self.do(UndoSetNoteValue(state, new_val))
                 self.update()
+                self.first_entry = False
             elif key == "kDC5":
                 self.clear_chord()
             elif key == "KEY_SR" or key == "KEY_SF":
