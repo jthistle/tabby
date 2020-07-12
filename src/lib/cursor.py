@@ -71,6 +71,6 @@ class Cursor:
     def replace_chord(self, src):
         new_notes = []
         for note in src.notes:
-            new_note = Note(note.string, note.value)
+            new_note = Note(self.chord, note.string, note.value)
             new_notes.append(new_note)
         self.chord.notes = new_notes

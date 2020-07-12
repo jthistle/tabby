@@ -38,6 +38,9 @@ esc - back to view mode
 :               - open console
 esc             - exit console
 c               - copy selected chord
+v               - paste selected chord
+z               - undo
+shift + z       - redo
 ctrl + delete   - clear selected chord
 
 = edit mode:

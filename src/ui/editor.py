@@ -10,6 +10,7 @@ from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .help import get_help
 
+from lib.undo.cursor_state import CursorState
 from lib.undo.set_note_value import UndoSetNoteValue
 from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
@@ -149,19 +150,25 @@ class Editor:
             self.do(UndoSetTuning(strings))
             self.update()
         elif action == Action.UNDO:
-            res = self.current_tab.undo_stack.undo()
-            if not res:
-                self.console.error("Nothing to undo!")
-            self.update()
+            self.undo()
         elif action == Action.REDO:
-            res = self.current_tab.undo_stack.redo()
-            if not res:
-                self.console.error("Nothing to redo!")
-            self.update()
+            self.redo()
         else:
             self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
         return True
+
+    def undo(self):
+        res = self.current_tab.undo_stack.undo()
+        if not res:
+            self.console.error("Nothing to undo!")
+        self.update()
+
+    def redo(self):
+        res = self.current_tab.undo_stack.redo()
+        if not res:
+            self.console.error("Nothing to redo!")
+        self.update()
 
     def post_cursor_move(self):
         self.first_entry = True
@@ -204,6 +211,10 @@ class Editor:
                 else:
                     self.cursor.replace_chord(self.clipboard)
                     self.update()
+            elif key == "z":
+                self.undo()
+            elif key == "Z":
+                self.redo()
             elif key == "kDC5":
                 self.cursor.clear_chord()
                 self.update()
@@ -223,26 +234,20 @@ class Editor:
                 self.update()
             elif key == "KEY_SR" or key == "KEY_SF":
                 direction = 1 if key == "KEY_SR" else -1
-                note = self.cursor.note()
-                string = note.string
-                chord = self.cursor.chord_number()
-                bar = self.cursor.bar_number()
-                self.do(UndoDuplicateNote(bar, chord, string, direction))
+                state = CursorState(self.cursor)
+                self.do(UndoDuplicateNote(state, direction))
                 self.update()
             elif key == " ":
                 self.cursor.move(2)
                 self.post_cursor_move()
             elif len(key) == 1 and ACCEPTED_NOTE_VALS.match(key):
-                note = self.cursor.note()
-                string = note.string
-                chord = self.cursor.chord_number()
-                bar = self.cursor.bar_number()
-                value = note.value
+                state = CursorState(self.cursor)
+                value = self.cursor.note().value
                 if self.first_entry:
                     value = key
                 else:
                     value += key
-                self.do(UndoSetNoteValue(bar, chord, string, value))
+                self.do(UndoSetNoteValue(state, value))
                 self.update()
                 self.first_entry = False
 
