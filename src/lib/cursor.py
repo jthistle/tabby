@@ -51,16 +51,3 @@ class Cursor:
         max_s = cur_bar.nstrings() - 1
 
         self.string = min(max_s, max(0, self.string + direction))
-
-    def backspace(self):
-        note = self.note()
-        if note.value != "":
-            note.value = note.value[:-1]
-
-    def delete(self):
-        note = self.note()
-        if note.value != "":
-            note.value = note.value[1:]
-
-    def clear_note(self):
-        self.note().value = ""
