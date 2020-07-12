@@ -12,6 +12,7 @@ from .help import get_help
 
 from lib.undo.set_note_value import UndoSetNoteValue
 from lib.undo.duplicate_note import UndoDuplicateNote
+from lib.undo.set_tuning import UndoSetTuning
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -145,7 +146,7 @@ class Editor:
                 if not confirm:
                     return True
 
-            self.current_tab.set_tuning(strings)
+            self.do(UndoSetTuning(strings))
             self.update()
         elif action == Action.UNDO:
             res = self.current_tab.undo_stack.undo()
