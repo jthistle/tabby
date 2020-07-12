@@ -25,6 +25,14 @@ class Tab:
         self.undo_stack.do(action)
         self.undo_stack.redo()
 
+    def hydrate_state(self, state):
+        """Take a cursor state and return the objects the it points to."""
+        bar = self.bar(state.bar)
+        chord = bar.chord(state.chord)
+        note = chord.get_note(state.string)
+
+        return bar, chord, note
+
     def bars(self):
         for child in self.children:
             if type(child) == Bar:

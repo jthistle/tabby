@@ -7,9 +7,7 @@ class UndoDuplicateNote:
         self.prev = None
 
     def redo(self, tab):
-        bar = tab.bar(self.state.bar)
-        chord = bar.chord(self.state.chord)
-        note = chord.get_note(self.state.string)
+        bar, chord, note = tab.hydrate_state(self.state)
 
         value = note.value
         if value == "":
@@ -30,8 +28,7 @@ class UndoDuplicateNote:
         if self.prev == None:
             return
 
-        bar = tab.bar(self.state.bar)
-        chord = bar.chord(self.state.chord)
+        bar, chord, _ = tab.hydrate_state(self.state)
         for string in self.prev:
             note = chord.get_note(string)
             note.value = self.prev[string]

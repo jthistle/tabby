@@ -5,9 +5,8 @@ class UndoSetNoteValue:
         self.value = value
 
     def redo(self, tab):
-        bar = tab.bar(self.state.bar)
-        chord = bar.chord(self.state.chord)
-        note = chord.get_note(self.state.string)
+        bar, chord, note = tab.hydrate_state(self.state)
+
         old_value = note.value
         note.value = self.value
         self.value = old_value

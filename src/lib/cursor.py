@@ -64,13 +64,3 @@ class Cursor:
 
     def clear_note(self):
         self.note().value = ""
-
-    def clear_chord(self):
-        self.chord.clear()
-
-    def replace_chord(self, src):
-        new_notes = []
-        for note in src.notes:
-            new_note = Note(self.chord, note.string, note.value)
-            new_notes.append(new_note)
-        self.chord.notes = new_notes
