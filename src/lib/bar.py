@@ -14,6 +14,7 @@ class Bar:
         for i in range(DEFAULT_WIDTH):
             self.chords.append(Chord(self))
 
+    @property
     def size(self):
         return len(self.chords)
 
@@ -22,7 +23,7 @@ class Bar:
             return False
 
         spacing = int(1 / mult)
-        for i in range(self.size() - 1, spacing - 2, -spacing):
+        for i in range(self.size - 1, spacing - 2, -spacing):
             if not self.chords[i].empty:
                 return True
         return False
@@ -31,16 +32,18 @@ class Bar:
         """If >1, mult must be an int. If <1, mult must be a rational number in the form 1/n, where n is an int."""
         if mult > 1:
             mult = int(mult)
-            for i in range(1, self.size() * mult, mult):
+            for i in range(1, self.size * mult, mult):
                 self.chords.insert(i, Chord(self))
         elif mult < 1:
             spacing = int(1 / mult)
-            for i in range(self.size() - 1, spacing - 2, -spacing):
+            for i in range(self.size - 1, spacing - 2, -spacing):
                 del self.chords[i]
 
+    @property
     def nstrings(self):
         return len(self.tuning.strings)
 
+    @property
     def nchords(self):
         return len(self.chords)
 
@@ -53,12 +56,12 @@ class Bar:
         return width + 2 + 1 + (self.tuning.get_width() + 1 if is_system_start else 0)
 
     def get_height(self):
-        return self.nstrings()
+        return self.nstrings
 
     def layout(self, is_system_start) -> [str]:
         lines = []
         tuning_width = self.tuning.get_width()
-        for i in range(self.nstrings()):
+        for i in range(self.nstrings):
             line = []
 
             if is_system_start:
@@ -75,7 +78,7 @@ class Bar:
             for i in range(len(chord_lines)):
                 lines[i] += chord_lines[i]
 
-        for i in range(self.nstrings()):
+        for i in range(self.nstrings):
             # Final padding
             lines[i].append("-")
             lines[i].append("|")
@@ -110,13 +113,15 @@ class Bar:
     def delete_chord(self, n):
         del self.chords[n]
 
+    @property
     def next_bar(self):
         my_ind = self.parent.bar_number(self)
-        if my_ind == self.parent.nbars() - 1:
+        if my_ind == self.parent.nbars - 1:
             return None
 
         return self.parent.bar(my_ind + 1)
 
+    @property
     def prev_bar(self):
         my_ind = self.parent.bar_number(self)
         if my_ind == 0:
@@ -125,7 +130,7 @@ class Bar:
         return self.parent.bar(my_ind - 1)
 
     def tuning_causes_loss(self, new_tuning):
-        if len(new_tuning) >= self.nstrings():
+        if len(new_tuning) >= self.nstrings:
             return False
         new_max = len(new_tuning) - 1
         for chord in self.chords:

@@ -14,7 +14,7 @@ class Chord:
 
     def layout(self) -> [str]:
         width = self.get_width()
-        lines = ["-" * width] * self.parent.nstrings()
+        lines = ["-" * width] * self.parent.nstrings
         for note in self.notes:
             lines[note.string] = note.layout().ljust(width, "-")
 
@@ -28,7 +28,7 @@ class Chord:
         self.notes = []
 
     def get_note(self, string):
-        if string >= self.parent.nstrings() or string < 0:
+        if string >= self.parent.nstrings or string < 0:
             return None
 
         for note in self.notes:
@@ -46,8 +46,8 @@ class Chord:
 
     def next_chord(self):
         my_ind = self.parent.chords.index(self)
-        if my_ind == self.parent.nchords() - 1:
-            bar = self.parent.next_bar()
+        if my_ind == self.parent.nchords - 1:
+            bar = self.parent.next_bar
             if bar is None:
                 return None
             return bar.chord(0)
@@ -57,10 +57,10 @@ class Chord:
     def prev_chord(self):
         my_ind = self.parent.chords.index(self)
         if my_ind == 0:
-            bar = self.parent.prev_bar()
+            bar = self.parent.prev_bar
             if bar is None:
                 return None
-            return bar.chord(bar.nchords() - 1)
+            return bar.chord(bar.nchords - 1)
 
         return self.parent.chord(my_ind - 1)
 

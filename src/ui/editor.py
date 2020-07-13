@@ -203,8 +203,8 @@ class Editor:
 
     def remove_chord(self):
         state = CursorState(self.cursor)
-        if not (self.cursor.bar_number() == self.current_tab.nbars() - 1
-                and self.cursor.chord_number() == self.cursor.bar().nchords() - 1):
+        if not (self.cursor.bar_number == self.current_tab.nbars - 1
+                and self.cursor.chord_number == self.cursor.bar.nchords - 1):
             self.cursor.move(1)
         else:
             self.cursor.move(-1)
@@ -268,7 +268,7 @@ class Editor:
         self.update()
 
     def shrink_bar(self):
-        if self.cursor.bar().size_change_causes_loss(1/2):
+        if self.cursor.bar.size_change_causes_loss(1/2):
             self.console.echo("Can't shrink further, would delete notes")
             return
 
@@ -276,8 +276,8 @@ class Editor:
         self.do(UndoResizeBar(state, 1/2))
         bar = self.current_tab.bar(state.bar)
         n_to_use = state.chord // 2
-        if n_to_use > bar.nchords() - 1:
-            n_to_use = bar.nchords() - 1
+        if n_to_use > bar.nchords - 1:
+            n_to_use = bar.nchords - 1
         self.cursor.chord = bar.chord(n_to_use)
         self.update()
 
@@ -348,7 +348,7 @@ class Editor:
                 self.update()
             elif key == "KEY_BACKSPACE":
                 state = CursorState(self.cursor)
-                new_val = self.cursor.note().value[:-1]
+                new_val = self.cursor.note.value[:-1]
                 self.do(UndoSetNoteValue(state, new_val))
                 self.update()
                 self.first_entry = False
@@ -361,7 +361,7 @@ class Editor:
                 self.update()
             elif len(key) == 1 and ACCEPTED_NOTE_VALS.match(key):
                 state = CursorState(self.cursor)
-                value = self.cursor.note().value
+                value = self.cursor.note.value
                 if self.first_entry:
                     value = key
                 else:

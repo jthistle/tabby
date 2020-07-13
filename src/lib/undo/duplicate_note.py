@@ -16,7 +16,7 @@ class UndoDuplicateNote:
         self.prev = {}
         end = 0
         if self.direction == 1:
-            end = bar.nstrings() - 1
+            end = bar.nstrings - 1
 
         initial = note.string
         for i in range(initial + self.direction, end + self.direction, self.direction):

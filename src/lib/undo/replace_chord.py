@@ -6,7 +6,7 @@ class UndoReplaceChord:
 
     def populate(self, chord):
         string_val_map = {}
-        for i in range(chord.parent.nstrings()):
+        for i in range(chord.parent.nstrings):
             string_val_map[i] = chord.get_note(i).value
         return string_val_map
 

@@ -6,17 +6,21 @@ class Cursor:
     def __init__(self, tab, initial_chord):
         self.tab = tab
         self.chord = initial_chord
-        self.string = initial_chord.parent.nstrings() - 1
+        self.string = initial_chord.parent.nstrings - 1
 
+    @property
     def bar(self):
         return self.chord.parent
 
+    @property
     def note(self):
         return self.chord.get_note(self.string)
 
+    @property
     def bar_number(self):
         return self.chord.parent.parent.bar_number(self.chord.parent)
 
+    @property
     def chord_number(self):
         return self.chord.parent.chord_number(self.chord)
 
@@ -34,20 +38,20 @@ class Cursor:
         if direction == -1:
             prev_bar = None
             if self.chord.parent.chord_number(self.chord) == 0:
-                prev_bar = self.chord.parent.prev_bar()
+                prev_bar = self.chord.parent.prev_bar
 
             if not prev_bar:
-                prev_bar = self.bar()
+                prev_bar = self.bar
             self.chord = prev_bar.chord(0)
         elif direction == 1:
-            next_bar = self.chord.parent.next_bar()
+            next_bar = self.chord.parent.next_bar
             if not next_bar:
-                next_bar = self.bar()
+                next_bar = self.bar
             self.chord = next_bar.chord(0)
 
     def move_string(self, direction):
         """+1 for up, -1 for down"""
-        cur_bar = self.bar()
-        max_s = cur_bar.nstrings() - 1
+        cur_bar = self.bar
+        max_s = cur_bar.nstrings - 1
 
         self.string = min(max_s, max(0, self.string + direction))

@@ -44,6 +44,7 @@ class Tab:
 
         return bar, chord, note
 
+    @property
     def bars(self):
         for child in self.children:
             if type(child) == Bar:
@@ -68,6 +69,7 @@ class Tab:
                 i += 1
         return None
 
+    @property
     def nbars(self):
         i = 0
         for child in self.children:
@@ -93,7 +95,7 @@ class Tab:
         return None
 
     def tuning_causes_loss(self, new_tuning: [str]):
-        for bar in self.bars():
+        for bar in self.bars:
             if bar.tuning_causes_loss(new_tuning):
                 return True
         return False
@@ -101,7 +103,7 @@ class Tab:
     def set_tuning(self, strings):
         new_tuning = Tuning(" ".join(strings))
         self.default_tuning = new_tuning
-        for bar in self.bars():
+        for bar in self.bars:
             bar.set_tuning(new_tuning)
         self.cursor.string = len(strings) - 1
 
@@ -152,16 +154,16 @@ class Tab:
                 bar_lines = child.layout(system_start)
 
                 # Decide where to put the cursor
-                if child == self.cursor.bar():
+                if child == self.cursor.bar:
                     cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.chord)
                     horizontal = padding_left + cols
                     if not system_start:
                         horizontal += len(lines[vertical_offset])
                     cursor_highlight_start = [vertical_offset, horizontal]
-                    cursor_highlight_end = [vertical_offset + child.nstrings() - 1, horizontal + curs_width - 1]
+                    cursor_highlight_end = [vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
 
                     # Specific string highlighting
-                    bottom_line = vertical_offset + child.nstrings() - 1
+                    bottom_line = vertical_offset + child.nstrings - 1
                     cursor_strong_highlight_start = [bottom_line - self.cursor.string, horizontal]
                     cursor_strong_highlight_end   = [bottom_line - self.cursor.string, horizontal + curs_width - 1]
 
