@@ -16,6 +16,7 @@ from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
 from lib.undo.replace_chord import UndoReplaceChord
 from lib.undo.clear_chord import UndoClearChord
+from lib.undo.resize_bar import UndoResizeBar
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -229,6 +230,13 @@ class Editor:
                 self.redo()
             elif key == "kDC5":
                 self.clear_chord()
+            elif key == "+":
+                self.do(UndoResizeBar(CursorState(self.cursor), 2))
+                self.update()
+            elif key == "-":
+                self.do(UndoResizeBar(CursorState(self.cursor), 1/2))
+                self.update()
+
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
                 direction = 1 if key == "KEY_UP" else -1

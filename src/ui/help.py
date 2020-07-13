@@ -35,13 +35,16 @@ esc - back to view mode
 
 = view mode (default):
 
-:               - open console
-esc             - exit console
-c               - copy selected chord
-v               - paste selected chord
-z               - undo
-shift + z       - redo
-ctrl + delete   - clear selected chord
+:                - open console
+esc              - exit console
+c                - copy selected chord
+v                - paste selected chord
+z                - undo
+shift + z        - redo
+ctrl + backspace - clear selected chord
+ctrl + delete    - remove selected chord
++                - double bar length
+-                - halve bar length
 
 = edit mode:
 

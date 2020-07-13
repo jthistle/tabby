@@ -25,11 +25,18 @@ class Tab:
         self.undo_stack.do(action)
         self.undo_stack.redo()
 
-    def hydrate_state(self, state):
-        """Take a cursor state and return the objects the it points to."""
-        bar = self.bar(state.bar)
-        chord = bar.chord(state.chord)
-        note = chord.get_note(state.string)
+    def hydrate_state(self, state, ignore = 0):
+        """Take a cursor state and return the objects the it points to.
+            ignore is a bitmask: 1 = bar, 2 = chord, 4 = note."""
+        bar = chord = note = None
+        use = ~ignore
+
+        if use & 0b1:
+            bar = self.bar(state.bar)
+        if use & 0b10 and bar is not None:
+            chord = bar.chord(state.chord)
+        if use & 0b100 and chord is not None:
+            note = chord.get_note(state.string)
 
         return bar, chord, note
 
