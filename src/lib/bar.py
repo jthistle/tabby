@@ -96,6 +96,13 @@ class Bar:
     def chord_number(self, chord):
         return self.chords.index(chord)
 
+    def add_chord(self, n, chord):
+        self.chords.insert(n, chord)
+        return chord
+
+    def delete_chord(self, n):
+        del self.chords[n]
+
     def next_bar(self):
         my_ind = self.parent.bar_number(self)
         if my_ind == self.parent.nbars() - 1:

@@ -16,6 +16,7 @@ from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
 from lib.undo.replace_chord import UndoReplaceChord
 from lib.undo.clear_chord import UndoClearChord
+from lib.undo.remove_chord import UndoRemoveChord
 from lib.undo.resize_bar import UndoResizeBar
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
@@ -183,6 +184,16 @@ class Editor:
         self.do(UndoClearChord(state))
         self.update()
 
+    def remove_chord(self):
+        state = CursorState(self.cursor)
+        if not (self.cursor.bar_number() == self.current_tab.nbars() - 1
+                and self.cursor.chord_number() == self.cursor.bar().nchords() - 1):
+            self.cursor.move(1)
+        else:
+            self.cursor.move(-1)
+        self.do(UndoRemoveChord(state))
+        self.update()
+
     def handle_input(self):
         if self.console.in_cmd:
             res = self.console.handle_input()
@@ -196,18 +207,25 @@ class Editor:
         key = self.win.getkey()
         if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
             self.change_mode(Mode.VIEW)
-        elif key == "KEY_RIGHT" or key == "KEY_LEFT":
-            direction = 1 if key == "KEY_RIGHT" else -1
-            self.cursor.move(direction)
-            self.post_cursor_move()
-        elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
-            direction = 1 if key == "kRIT5" else -1
-            self.cursor.move_big(direction)
-            self.post_cursor_move()
-        elif key == " ":
-            self.cursor.move(2)
-            self.post_cursor_move()
-        elif self.mode == Mode.VIEW:
+
+        if self.mode == Mode.VIEW or self.mode == Mode.EDIT:
+            if key == "KEY_RIGHT" or key == "KEY_LEFT":
+                direction = 1 if key == "KEY_RIGHT" else -1
+                self.cursor.move(direction)
+                self.post_cursor_move()
+            elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
+                direction = 1 if key == "kRIT5" else -1
+                self.cursor.move_big(direction)
+                self.post_cursor_move()
+            elif key == "kDC5":
+                self.remove_chord()
+            elif key == "\x08":     # ctrl + backspace
+                self.clear_chord()
+            elif key == " ":
+                self.cursor.move(2)
+                self.post_cursor_move()
+
+        if self.mode == Mode.VIEW:
             if key == "e":
                 self.change_mode(Mode.EDIT)
             elif key == "h":
@@ -228,15 +246,12 @@ class Editor:
                 self.undo()
             elif key == "Z":
                 self.redo()
-            elif key == "kDC5":
-                self.clear_chord()
             elif key == "+":
                 self.do(UndoResizeBar(CursorState(self.cursor), 2))
                 self.update()
             elif key == "-":
                 self.do(UndoResizeBar(CursorState(self.cursor), 1/2))
                 self.update()
-
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
                 direction = 1 if key == "KEY_UP" else -1
@@ -251,7 +266,7 @@ class Editor:
                 self.do(UndoSetNoteValue(state, new_val))
                 self.update()
                 self.first_entry = False
-            elif key == "kDC5":
+            elif key == "\x08":
                 self.clear_chord()
             elif key == "KEY_SR" or key == "KEY_SF":
                 direction = 1 if key == "KEY_SR" else -1
