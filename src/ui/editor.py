@@ -250,7 +250,13 @@ class Editor:
                 self.do(UndoResizeBar(CursorState(self.cursor), 2))
                 self.update()
             elif key == "-":
-                self.do(UndoResizeBar(CursorState(self.cursor), 1/2))
+                state = CursorState(self.cursor)
+                self.do(UndoResizeBar(state, 1/2))
+                bar = self.current_tab.bar(state.bar)
+                n_to_use = state.chord // 2
+                if n_to_use > bar.nchords() - 1:
+                    n_to_use = bar.nchords() - 1
+                self.cursor.chord = bar.chord(n_to_use)
                 self.update()
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
