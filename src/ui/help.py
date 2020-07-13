@@ -84,12 +84,16 @@ ACTION_HELP_PAGES = {
         "desc": "Quit {name}. Append `!` to force quit even if there are unsaved changes."
     },
     Action.SAVE_QUIT: {
-        "usages": ":{cmd}[!]",
+        "usages": ":{cmd}[!] [file path]",
         "desc": "Quit {name}, saving any unsaved changes. Append `!` to force quit even if saving fails."
     },
     Action.SAVE: {
-        "usages": ":{cmd}",
+        "usages": ":{cmd} [file path]",
         "desc": "Save any unsaved changes."
+    },
+    Action.OPEN: {
+        "usages": ":{cmd} <file path>",
+        "desc": "Open the {name} file located at file path."
     },
     Action.HELP: {
         "usages": ":{cmd} [command]",

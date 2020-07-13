@@ -49,3 +49,14 @@ class Tuning:
             raise Exception("String index '{}' too high!".format(i))
 
         return self.strings[i]
+
+    def write(self):
+        return {
+            "type": "Tuning",
+            "strings": self.strings
+        }
+
+    def read(self, obj):
+        assert obj.get("type") == "Tuning"
+
+        self.strings = obj.get("strings")

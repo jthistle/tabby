@@ -20,6 +20,10 @@ class Chord:
 
         return [x for x in reversed(lines)]
 
+    @property
+    def empty(self):
+        return len(self.notes) == 0
+
     def clear(self):
         self.notes = []
 
@@ -65,3 +69,20 @@ class Chord:
             if note.string > new_max:
                 return True
         return False
+
+    def write(self):
+        obj = {
+            "type": "Chord",
+            "notes": [x.write() for x in self.notes]
+        }
+
+        return obj
+
+    def read(self, obj):
+        assert obj.get("type") == "Chord"
+
+        self.notes = []
+        for note in obj.get("notes"):
+            new_note = Note(self, 0, "")
+            new_note.read(note)
+            self.notes.append(new_note)

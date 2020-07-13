@@ -1,5 +1,7 @@
 import curses
 import re
+import json
+from os.path import expanduser, splitext
 
 from .console import Console
 from .header import Header
@@ -9,6 +11,7 @@ from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .help import get_help
+from .const import FILE_EXTENSION
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.set_note_value import UndoSetNoteValue
@@ -37,6 +40,7 @@ class Editor:
         self.first_entry = True     # first entry after moving the cursor to this position
         self.current_help = ""
         self.clipboard = None
+        self.file_path = None
 
         # Initial update
         curses.curs_set(0)
@@ -123,6 +127,7 @@ class Editor:
             return True
 
         action = cmd.get("action")
+        force = cmd.get("modifier") == ActionMod.FORCE
         if action == Action.HELP:
             if len(cmd.get("parts")) == 1:
                 self.current_help = get_help()
@@ -135,9 +140,21 @@ class Editor:
                 self.current_help = help_str
 
             self.change_mode(Mode.HELP)
-        elif action == Action.SAVE_QUIT:
-            # TODO save
-            return False
+        elif action == Action.SAVE or action == Action.SAVE_QUIT:
+            path = None
+            if len(cmd.get("parts")) > 1:
+                path = " ".join(cmd.get("parts")[1:]).strip()
+            res = self.save_current(path)
+            if action == Action.SAVE_QUIT and (res or force):
+                return False
+            return True
+        elif action == Action.OPEN:
+            if len(cmd.get("parts")) == 1:
+                self.console.error("Must specify file location!")
+                return True
+
+            path = " ".join(cmd.get("parts")[1:]).strip()
+            self.read(path)
         elif action == Action.QUIT:
             return False
         elif action == Action.SET_TUNING:
@@ -158,7 +175,7 @@ class Editor:
         elif action == Action.REDO:
             self.redo()
         else:
-            self.console.echo("Action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
+            self.console.echo("Unhandled action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
         return True
 
@@ -192,6 +209,62 @@ class Editor:
         else:
             self.cursor.move(-1)
         self.do(UndoRemoveChord(state))
+        self.update()
+
+    def save_current(self, path = None):
+        if self.file_path is None and path is None:
+            self.console.error("Must specify location to write to!")
+            return False
+
+        path_to_use = path or self.file_path
+        written = self.current_tab.write()
+        value = json.dumps(written)
+
+        # Automatically add extension if none provided
+        _, file_extension = splitext(path_to_use)
+        if file_extension == "":
+            path_to_use += "." + FILE_EXTENSION
+
+        try:
+            with open(expanduser(path_to_use), "w") as f:
+                f.write(value)
+        except IOError:
+            self.console.error("Couldn't open {}!".format(path))
+            return False
+
+        self.file_path = path_to_use
+        self.header.filename = path_to_use
+        self.header.update()
+        self.console.echo("Saved successfully")
+
+    def read(self, path):
+        # Automatically add extension if none provided
+        _, file_extension = splitext(path)
+        if file_extension == "":
+            path += "." + FILE_EXTENSION
+
+        raw_text = ""
+        try:
+            with open(expanduser(path), "r") as f:
+                raw_text = f.read()
+        except IOError:
+            self.console.error("Couldn't open {}!".format(path))
+            return False
+
+        obj = None
+        try:
+            obj = json.loads(raw_text)
+        except json.JSONDecodeError:
+            self.console.error("File corrupted, could not read")
+            return False
+
+        new_tab = Tab()
+        new_tab.read(obj)
+
+        self.current_tab = new_tab
+        self.file_path = path
+        self.header.filename = path
+        self.header.update()
         self.update()
 
     def handle_input(self):

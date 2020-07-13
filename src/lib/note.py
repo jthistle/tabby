@@ -10,3 +10,18 @@ class Note:
 
     def get_width(self):
         return len(self.value)
+
+    def write(self):
+        obj = {
+            "type": "Note",
+            "string": self.string,
+            "value": self.value,
+        }
+
+        return obj
+
+    def read(self, obj):
+        assert obj.get("type") == "Note"
+
+        self.string = obj.get("string")
+        self.value = obj.get("value")

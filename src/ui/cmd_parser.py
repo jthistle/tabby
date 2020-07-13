@@ -9,6 +9,7 @@ class Action(Enum):
     SET_TUNING = 5
     UNDO = 6
     REDO = 7
+    OPEN = 8
 
 
 class ActionMod(Enum):
@@ -19,11 +20,12 @@ class ActionMod(Enum):
 ALIASES = {
     Action.QUIT: ["q", "quit"],
     Action.SAVE_QUIT: ["wq"],
-    Action.SAVE: ["w", "write", "s", "save"],
+    Action.SAVE: ["w", "write", "save"],
     Action.HELP: ["h", "help"],
     Action.SET_TUNING: ["t", "tuning"],
     Action.UNDO: ["u", "undo"],
     Action.REDO: ["r", "redo"],
+    Action.OPEN: ["o", "open", "read"]
 }
 
 

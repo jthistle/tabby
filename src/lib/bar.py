@@ -135,3 +135,48 @@ class Bar:
                 else:
                     break
         self.tuning = new_tuning
+
+    def write(self):
+        obj = {
+            "type": "Bar",
+            "tuning": self.tuning.write(),
+        }
+
+        chords = []
+        empty_count = 0
+        for chord in self.chords:
+            if chord.empty:
+                empty_count += 1
+                continue
+            if empty_count > 0:
+                chords.append({
+                    "type": "EmptyChords",
+                    "count": empty_count
+                })
+                empty_count = 0
+
+            chords.append(chord.write())
+
+        if empty_count > 0:
+            chords.append({
+                "type": "EmptyChords",
+                "count": empty_count
+            })
+
+        obj["chords"] = chords
+        return obj
+
+    def read(self, obj):
+        assert obj.get("type") == "Bar"
+        self.tuning.read(obj.get("tuning"))
+
+        self.chords = []
+        for chord in obj.get("chords"):
+            if chord.get("type") == "EmptyChords":
+                for i in range(chord.get("count")):
+                    self.chords.append(Chord(self))
+                continue
+
+            new_chord = Chord(self)
+            new_chord.read(chord)
+            self.chords.append(new_chord)

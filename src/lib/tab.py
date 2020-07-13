@@ -5,6 +5,9 @@ from .text import Text
 from .cursor import Cursor
 from util.logger import logger
 from .undo.stack import UndoStack
+from .tab_meta import TabMeta
+
+from meta.api import API_VERSION
 
 class LayoutResult:
     def __init__(self, txt, highlighted = None, strong = None):
@@ -20,6 +23,7 @@ class Tab:
         self.max_width = 100
         self.cursor = Cursor(self, self.bar(0).chord(0))
         self.undo_stack = UndoStack(self)
+        self.meta = TabMeta(API_VERSION, "Untitled")
 
     def do(self, action):
         self.undo_stack.do(action)
@@ -186,5 +190,35 @@ class Tab:
         txt = "\n".join([" " * padding_left + x for x in lines])
         return LayoutResult(txt, highlighted, strong_highlighted)
 
+    def write(self):
+        written_obj = {
+            "meta": self.meta.write(),
+            "max_width": self.max_width
+        }
 
+        tab_obj = []
+        for child in self.children:
+            tab_obj.append(child.write())
 
+        written_obj["tab"] = tab_obj
+
+        return written_obj
+
+    def read(self, obj):
+        self.meta.read(obj.get("meta"))
+        self.max_width = obj.get("max_width")
+
+        self.children = []
+        for child in obj.get("tab"):
+            type_name = child.get("type")
+            new_obj = None
+            if type_name == "Bar":
+                new_obj = Bar(self)
+            elif type_name == "Text":
+                new_obj = Text(self, "")
+            new_obj.read(child)
+            self.children.append(new_obj)
+
+        # Reset cursor
+        logger.debug(self.children)
+        self.cursor = Cursor(self, self.bar(0).chord(0))
