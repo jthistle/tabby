@@ -33,25 +33,30 @@ h - display this help message
 
 esc - back to view mode
 
-= view mode (default):
-
-:                - open console
-esc              - exit console
-c                - copy selected chord
-v                - paste selected chord
-z                - undo
-shift + z        - redo
-ctrl + backspace - clear selected chord
-ctrl + delete    - remove selected chord
-+                - double bar length
--                - halve bar length
-
-= edit mode:
+= view mode AND edit mode
 
 arrow keys        - move cursor
 ctrl + arrow keys - move cursor in large steps
-delete            - clear selected note
-ctrl + delete     - clear selected chord
+ctrl + backspace  - clear selected chord
+ctrl + delete     - remove selected chord
+
+= view mode (default):
+
+:                 - open console
+esc               - exit console
+c                 - copy selected chord
+v                 - paste selected chord
+z                 - undo
+shift + z         - redo
++                 - double bar length
+-                 - halve bar length
+
+= edit mode:
+
+(type)             - enter note value
+up and down arrows - change note selection
+backspace          - delete last character entered
+delete             - clear selected note
 
 ---
 
