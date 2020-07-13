@@ -17,6 +17,16 @@ class Bar:
     def size(self):
         return len(self.chords)
 
+    def size_change_causes_loss(self, mult):
+        if mult > 1:
+            return False
+
+        spacing = int(1 / mult)
+        for i in range(self.size() - 1, spacing - 2, -spacing):
+            if not self.chords[i].empty:
+                return True
+        return False
+
     def change_size(self, mult):
         """If >1, mult must be an int. If <1, mult must be a rational number in the form 1/n, where n is an int."""
         if mult > 1:

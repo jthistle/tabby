@@ -267,6 +267,20 @@ class Editor:
         self.header.update()
         self.update()
 
+    def shrink_bar(self):
+        if self.cursor.bar().size_change_causes_loss(1/2):
+            self.console.echo("Can't shrink further, would delete notes")
+            return
+
+        state = CursorState(self.cursor)
+        self.do(UndoResizeBar(state, 1/2))
+        bar = self.current_tab.bar(state.bar)
+        n_to_use = state.chord // 2
+        if n_to_use > bar.nchords() - 1:
+            n_to_use = bar.nchords() - 1
+        self.cursor.chord = bar.chord(n_to_use)
+        self.update()
+
     def handle_input(self):
         if self.console.in_cmd:
             res = self.console.handle_input()
@@ -323,14 +337,7 @@ class Editor:
                 self.do(UndoResizeBar(CursorState(self.cursor), 2))
                 self.update()
             elif key == "-":
-                state = CursorState(self.cursor)
-                self.do(UndoResizeBar(state, 1/2))
-                bar = self.current_tab.bar(state.bar)
-                n_to_use = state.chord // 2
-                if n_to_use > bar.nchords() - 1:
-                    n_to_use = bar.nchords() - 1
-                self.cursor.chord = bar.chord(n_to_use)
-                self.update()
+                self.shrink_bar()
         elif self.mode == Mode.EDIT:
             if key == "KEY_UP" or key == "KEY_DOWN":
                 direction = 1 if key == "KEY_UP" else -1
