@@ -143,7 +143,7 @@ class Tab:
                 current_width = 0
             elif element_type == Bar:
                 width = child.get_width(system_start)
-                if current_width + width > self.max_width:
+                if current_width + width > self.max_width and not system_start:
                     current_width = width
                     vertical_offset += child.get_height() + bar_padding_bottom
                     system_start = True
