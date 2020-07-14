@@ -222,5 +222,4 @@ class Tab:
             self.children.append(new_obj)
 
         # Reset cursor
-        logger.debug(self.children)
         self.cursor = Cursor(self, self.bar(0).chord(0))

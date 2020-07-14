@@ -1,8 +1,11 @@
 
 from lib.chord import Chord
+from .undo_action import UndoAction
 
-class UndoRemoveChord:
+
+class UndoRemoveChord(UndoAction):
     def __init__(self, state):
+        super().__init__("remove chord")
         self.state = state
         self.initial_val = None
 

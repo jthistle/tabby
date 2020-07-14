@@ -1,8 +1,11 @@
 
-class UndoReplaceChord:
+from .undo_action import UndoAction
+
+class UndoReplaceChord(UndoAction):
     def __init__(self, state, chord):
         self.state = state
         self.string_val_map = self.populate(chord)
+        super().__init__("replace chord")
 
     def populate(self, chord):
         string_val_map = {}

@@ -180,16 +180,20 @@ class Editor:
         return True
 
     def undo(self):
-        res = self.current_tab.undo_stack.undo()
+        res, action = self.current_tab.undo_stack.undo()
         if not res:
             self.console.error("Nothing to undo!")
-        self.update()
+        else:
+            self.console.echo("Undo {}".format(action.undo_name))
+            self.update()
 
     def redo(self):
-        res = self.current_tab.undo_stack.redo()
+        res, action = self.current_tab.undo_stack.redo()
         if not res:
             self.console.error("Nothing to redo!")
-        self.update()
+        else:
+            self.console.echo("Redo {}".format(action.undo_name))
+            self.update()
 
     def post_cursor_move(self):
         self.first_entry = True

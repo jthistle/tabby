@@ -17,16 +17,19 @@ class UndoStack:
 
     def redo(self):
         if self.position >= len(self.actions) - 1:
-            return False
+            return False, None
 
-        self.actions[self.position + 1].redo(self.tab)
+        action = self.actions[self.position + 1]
+        action.redo(self.tab)
         self.position += 1
-        return True
+        return True, action
 
     def undo(self):
+        """Returns result, UndoAction"""
         if self.position < 0:
-            return False
+            return False, None
 
-        self.actions[self.position].undo(self.tab)
+        action = self.actions[self.position]
+        action.undo(self.tab)
         self.position -= 1
-        return True
+        return True, action

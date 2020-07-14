@@ -1,10 +1,14 @@
 
-class UndoDuplicateNote:
+from .undo_action import UndoAction
+
+
+class UndoDuplicateNote(UndoAction):
     def __init__(self, state, direction: int):
         self.state = state
         self.direction = direction
 
         self.prev = None
+        super().__init__("duplicate note")
 
     def redo(self, tab):
         bar, chord, note = tab.hydrate_state(self.state)

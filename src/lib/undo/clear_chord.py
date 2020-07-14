@@ -1,6 +1,9 @@
 
-class UndoClearChord:
+from .undo_action import UndoAction
+
+class UndoClearChord(UndoAction):
     def __init__(self, state):
+        super().__init__("clear chord")
         self.state = state
         self.initial_val = None
 
