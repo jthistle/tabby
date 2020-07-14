@@ -36,15 +36,18 @@ esc - back to view mode
 = view mode AND edit mode
 
 arrow keys        - move cursor
+space             - move cursor forward two steps
 ctrl + arrow keys - move cursor in large steps
-ctrl + backspace  - clear selected chord
+delete            - clear selected chord
 ctrl + delete     - remove selected chord
+ctrl + space      - insert chord after selected chord
 
 = view mode (default):
 
 :                 - open console
 esc               - exit console
 c                 - copy selected chord
+x                 - cut selected chord
 v                 - paste selected chord
 z                 - undo
 shift + z         - redo
@@ -56,7 +59,6 @@ shift + z         - redo
 (type)             - enter note value
 up and down arrows - change note selection
 backspace          - delete last character entered
-delete             - clear selected note
 
 ---
 

@@ -20,6 +20,7 @@ from lib.undo.set_tuning import UndoSetTuning
 from lib.undo.replace_chord import UndoReplaceChord
 from lib.undo.clear_chord import UndoClearChord
 from lib.undo.remove_chord import UndoRemoveChord
+from lib.undo.insert_chord import UndoInsertChord
 from lib.undo.resize_bar import UndoResizeBar
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
@@ -205,6 +206,11 @@ class Editor:
         self.do(UndoClearChord(state))
         self.update()
 
+    def insert_chord(self):
+        state = CursorState(self.cursor)
+        self.do(UndoInsertChord(state))
+        self.update()
+
     def remove_chord(self):
         state = CursorState(self.cursor)
         if not (self.cursor.bar_number == self.current_tab.nbars - 1
@@ -310,7 +316,9 @@ class Editor:
                 self.post_cursor_move()
             elif key == "kDC5":
                 self.remove_chord()
-            elif key == "\x08":     # ctrl + backspace
+            elif key == "\x00":     # ctrl + space
+                self.insert_chord()
+            elif key == "KEY_DC":
                 self.clear_chord()
             elif key == " ":
                 self.cursor.move(2)
@@ -325,7 +333,10 @@ class Editor:
             elif key == ":":
                 self.console.begin_cmd()
             elif key == "c":
-                self.clipboard = self.cursor.chord
+                self.clipboard = self.cursor.chord.write()
+            elif key == "x":
+                self.clipboard = self.cursor.chord.write()
+                self.clear_chord()
             elif key == "v":
                 if self.clipboard is None:
                     self.console.error("Nothing to paste!")
@@ -338,8 +349,9 @@ class Editor:
             elif key == "Z":
                 self.redo()
             elif key == "+":
-                self.do(UndoResizeBar(CursorState(self.cursor), 2))
-                self.update()
+                if self.cursor.bar.can_change_size(2):
+                    self.do(UndoResizeBar(CursorState(self.cursor), 2))
+                    self.update()
             elif key == "-":
                 self.shrink_bar()
         elif self.mode == Mode.EDIT:
@@ -347,17 +359,12 @@ class Editor:
                 direction = 1 if key == "KEY_UP" else -1
                 self.cursor.move_string(direction)
                 self.post_cursor_move()
-            elif key == "KEY_DC":
-                self.do(UndoSetNoteValue(CursorState(self.cursor), ""))
-                self.update()
             elif key == "KEY_BACKSPACE":
                 state = CursorState(self.cursor)
                 new_val = self.cursor.note.value[:-1]
                 self.do(UndoSetNoteValue(state, new_val))
                 self.update()
                 self.first_entry = False
-            elif key == "\x08":
-                self.clear_chord()
             elif key == "KEY_SR" or key == "KEY_SF":
                 direction = 1 if key == "KEY_SR" else -1
                 state = CursorState(self.cursor)

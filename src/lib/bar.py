@@ -18,6 +18,9 @@ class Bar:
     def size(self):
         return len(self.chords)
 
+    def can_change_size(self, mult):
+        return self.size * mult <= TICKS_IN_BAR
+
     def size_change_causes_loss(self, mult):
         if mult > 1:
             return False
@@ -112,6 +115,10 @@ class Bar:
 
     def delete_chord(self, n):
         del self.chords[n]
+
+    def insert_chord(self, n):
+        new_chord = Chord(self)
+        self.chords.insert(n, new_chord)
 
     @property
     def next_bar(self):

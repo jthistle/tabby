@@ -22,7 +22,10 @@ class Chord:
 
     @property
     def empty(self):
-        return len(self.notes) == 0
+        for note in self.notes:
+            if note.value != "":
+                return False
+        return True
 
     def clear(self):
         self.notes = []

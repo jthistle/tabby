@@ -2,25 +2,18 @@
 from .undo_action import UndoAction
 
 class UndoReplaceChord(UndoAction):
-    def __init__(self, state, chord):
+    def __init__(self, state, written_chord):
         self.state = state
-        self.string_val_map = self.populate(chord)
+        self.written_chord = written_chord
         super().__init__("replace chord")
 
-    def populate(self, chord):
-        string_val_map = {}
-        for i in range(chord.parent.nstrings):
-            string_val_map[i] = chord.get_note(i).value
-        return string_val_map
-
     def redo(self, tab):
-        bar, chord, _ = tab.hydrate_state(self.state)
-        prev_val = self.populate(chord)
+        _, chord, _ = tab.hydrate_state(self.state)
+        prev_val = chord.write()
 
-        for string in self.string_val_map:
-            chord.get_note(string).value = self.string_val_map[string]
+        chord.read(self.written_chord)
 
-        self.string_val_map = prev_val
+        self.written_chord = prev_val
 
     def undo(self, tab):
         self.redo(tab)
