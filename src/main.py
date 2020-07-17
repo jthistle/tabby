@@ -2,7 +2,7 @@
 
 import os
 import curses
-from ui.editor import Editor
+from ui.tabby import Tabby
 from ui.colour_pairs import init_pairs
 
 
@@ -17,11 +17,11 @@ def post_start():
 def main(stdscr):
     post_start()
 
-    editor = Editor()
+    instance = Tabby()
 
     res = True
     while res:
-        res = editor.handle_input()
+        res = instance.handle_input()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,44 @@
+
+from .action import Action, UserCmd
+from .mode import Mode
+
+class ActionHotkeyLink:
+    def __init__(self, action, keys, modes):
+        self.keys = keys
+        self.modes = modes
+        self.action = action
+
+
+ACTION_HOTKEY_MAP = [
+    ActionHotkeyLink(Action.UNDO, ["z"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.REDO, ["Z"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_LEFT, ["KEY_LEFT"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_RIGHT, ["KEY_RIGHT"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_BIG_RIGHT, ["kRIT5"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_BIG_LEFT, ["kLFT5"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_TWO_RIGHT, [" "], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_UP_STRING, ["KEY_UP"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_DOWN_STRING, ["KEY_DOWN"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.MODE_EDIT, ["e"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.MODE_HELP, ["h"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.BEGIN_CMD, [":"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.COPY, ["c"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.CUT, ["x"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.PASTE, ["v"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.BAR_GROW, ["+"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.BAR_SHRINK, ["-"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.NOTE_DELETE_LAST, ["KEY_BACKSPACE"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.DUPLICATE_NOTE_UP, ["KEY_SR"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.DUPLICATE_NOTE_DOWN, ["KEY_SF"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.REMOVE_CHORD, ["kDC5"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.INSERT_CHORD, ["\x00"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CLEAR_CHORD, ["KEY_DC"], [Mode.VIEW, Mode.EDIT]),
+]
+
+
+def key_to_action(key, mode):
+    for link in ACTION_HOTKEY_MAP:
+        if key in link.keys and mode in link.modes:
+            return UserCmd(link.action)
+
+    return None

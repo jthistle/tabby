@@ -3,14 +3,11 @@ import re
 import json
 from os.path import expanduser, splitext
 
-from .console import Console
-from .header import Header
-from .cmd_parser import parse_cmd, Action, ActionMod
+from .action import Action, ActionMod
 from lib.tab import Tab
 from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
-from .help import get_help
 from .const import FILE_EXTENSION
 
 from lib.undo.cursor_state import CursorState
@@ -26,9 +23,8 @@ from lib.undo.resize_bar import UndoResizeBar
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
 class Editor:
-    def __init__(self):
-        self.header = Header()
-        self.console = Console()
+    def __init__(self, parent):
+        self.parent = parent
         self.win = curses.newwin(curses.LINES - 2, curses.COLS, 1, 0)
         self.win.keypad(True)
 
@@ -37,9 +33,7 @@ class Editor:
 
         self.current_tab = Tab()
 
-        self.mode = Mode.VIEW
         self.first_entry = True     # first entry after moving the cursor to this position
-        self.current_help = ""
         self.clipboard = None
         self.file_path = None
 
@@ -48,22 +42,25 @@ class Editor:
         self.update()
 
     @property
+    def mode(self):
+        return self.parent.mode
+
+    @property
+    def header(self):
+        return self.parent.header
+
+    @property
+    def console(self):
+        return self.parent.console
+
+    @property
     def cursor(self):
         return self.current_tab.cursor
 
     def do(self, action):
         self.current_tab.do(action)
 
-    def help_update(self):
-        self.win.clear()
-        self.win.addstr(0, 0, self.current_help)
-        self.draw()
-
     def update(self):
-        if self.mode == Mode.HELP:
-            self.help_update()
-            return
-
         self.win.erase()
         tab = self.current_tab.layout()
         self.win.addstr(self.viewport_pos, 0, tab.txt)
@@ -100,84 +97,115 @@ class Editor:
             ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
             self.win.addch(pos[0], pos[1], ch, 0)
 
-    def change_mode(self, new_mode):
-        old_mode = self.mode
-        if new_mode == old_mode:
-            return
-
-        self.mode = new_mode
+    def on_mode_change(self, old_mode, new_mode):
         if new_mode == Mode.EDIT:
             self.first_entry = True
 
         if old_mode in (Mode.EDIT, Mode.VIEW):
             self.update_cursor()
 
-        if new_mode == Mode.VIEW:
-            self.console.clear()
-        else:
-            self.console.echo("-- {} MODE --".format(mode_name(new_mode)))
+    def handle_cmd(self, user_cmd):
+        """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.
+            Returns False if the programme should exit, otherwise True."""
+        action = user_cmd.action
+        force = user_cmd.modifier == ActionMod.FORCE
+        parts = user_cmd.parts
 
-        # Must be done last
-        if old_mode == Mode.HELP or new_mode == Mode.HELP:
-            self.update()
-
-    def handle_cmd(self, raw_cmd):
-        cmd = parse_cmd(raw_cmd)
-        if not cmd:
-            self.console.error("Invalid command!")
-            return True
-
-        action = cmd.get("action")
-        force = cmd.get("modifier") == ActionMod.FORCE
-        if action == Action.HELP:
-            if len(cmd.get("parts")) == 1:
-                self.current_help = get_help()
-            else:
-                cmd_str = cmd.get("parts")[1]
-                help_str = get_help(cmd_str)
-                if help_str is None:
-                    self.console.error("Command {} doesn't exist!".format(cmd_str))
-                    return True
-                self.current_help = help_str
-
-            self.change_mode(Mode.HELP)
-        elif action == Action.SAVE or action == Action.SAVE_QUIT:
+        if action == Action.SAVE or action == Action.SAVE_QUIT:
             path = None
-            if len(cmd.get("parts")) > 1:
-                path = " ".join(cmd.get("parts")[1:]).strip()
+            if len(parts) > 1:
+                path = " ".join(parts[1:]).strip()
             res = self.save_current(path)
             if action == Action.SAVE_QUIT and (res or force):
                 return False
             return True
         elif action == Action.OPEN:
-            if len(cmd.get("parts")) == 1:
+            if len(parts) == 1:
                 self.console.error("Must specify file location!")
                 return True
 
-            path = " ".join(cmd.get("parts")[1:]).strip()
+            path = " ".join(parts[1:]).strip()
             self.read(path)
         elif action == Action.QUIT:
+            # TODO unsaved changes check
             return False
         elif action == Action.SET_TUNING:
-            strings = [x.strip() for x in cmd.get("parts")[1:] if x.strip() != ""]
-            if len(strings) == 0:
-                self.console.error("Must specify at least one string for tuning!")
-                return True
-
-            if self.current_tab.tuning_causes_loss(strings):
-                confirm = self.console.confirm("Setting this tuning will cause loss of data. Continue?")
-                if not confirm:
-                    return True
-
-            self.do(UndoSetTuning(strings))
-            self.update()
+            strings = [x.strip() for x in parts[1:] if x.strip() != ""]
+            return self.set_tuning(strings)
         elif action == Action.UNDO:
             self.undo()
         elif action == Action.REDO:
             self.redo()
+        elif action in (Action.CURSOR_MOVE_RIGHT, Action.CURSOR_MOVE_LEFT):
+            direction = 1 if action == Action.CURSOR_MOVE_RIGHT else -1
+            self.cursor.move(direction)
+            self.post_cursor_move()
+        elif action in (Action.CURSOR_MOVE_BIG_RIGHT, Action.CURSOR_MOVE_BIG_LEFT):
+            direction = 1 if Action.CURSOR_MOVE_BIG_RIGHT else -1
+            self.cursor.move_big(direction)
+            self.post_cursor_move()
+        elif action == Action.CURSOR_MOVE_TWO_RIGHT:
+            self.cursor.move(2)
+            self.post_cursor_move()
+        elif action in (Action.CURSOR_MOVE_UP_STRING, Action.CURSOR_MOVE_DOWN_STRING):
+            direction = 1 if action == Action.CURSOR_MOVE_UP_STRING else -1
+            self.cursor.move_string(direction)
+            self.post_cursor_move()
+        elif action == Action.NOTE_DELETE_LAST:
+            state = CursorState(self.cursor)
+            new_val = self.cursor.note.value[:-1]
+            self.do(UndoSetNoteValue(state, new_val))
+            self.update()
+            self.first_entry = False
+        elif action == Action.REMOVE_CHORD:
+            self.remove_chord()
+        elif action == Action.INSERT_CHORD:
+            self.insert_chord()
+        elif action == Action.CLEAR_CHORD:
+            self.clear_chord()
+        elif action == Action.COPY:
+            self.clipboard = self.cursor.chord.write()
+        elif action == Action.CUT:
+            self.clipboard = self.cursor.chord.write()
+            self.clear_chord()
+        elif action == Action.PASTE:
+            self.paste()
+        elif action == Action.BAR_GROW:
+            if self.cursor.bar.can_change_size(2):
+                self.do(UndoResizeBar(CursorState(self.cursor), 2))
+                self.update()
+        elif action == Action.BAR_SHRINK:
+            self.shrink_bar()
+        elif action in (Action.DUPLICATE_NOTE_UP, Action.DUPLICATE_NOTE_DOWN):
+            direction = 1 if action == Action.DUPLICATE_NOTE_UP else -1
+            state = CursorState(self.cursor)
+            self.do(UndoDuplicateNote(state, direction))
+            self.update()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
 
+        return True
+
+    def paste(self):
+        if self.clipboard is None:
+            self.console.error("Nothing to paste!")
+        else:
+            state = CursorState(self.cursor)
+            self.do(UndoReplaceChord(state, self.clipboard))
+            self.update()
+
+    def set_tuning(self, strings):
+        if len(strings) == 0:
+            self.console.error("Must specify at least one string for tuning!")
+            return True
+
+        if self.current_tab.tuning_causes_loss(strings):
+            confirm = self.console.confirm("Setting this tuning will cause loss of data. Continue?")
+            if not confirm:
+                return True
+
+        self.do(UndoSetTuning(strings))
+        self.update()
         return True
 
     def undo(self):
@@ -291,97 +319,23 @@ class Editor:
         self.cursor.chord = bar.chord(n_to_use)
         self.update()
 
-    def handle_input(self):
-        if self.console.in_cmd:
-            res = self.console.handle_input()
-            if res:
-                return True
-            elif self.console.current_cmd != "":
-                cmd_res = self.handle_cmd(self.console.current_cmd)
-                if not cmd_res:
-                    return False
+    def handle_input(self, key):
+        if self.mode != Mode.EDIT:
+            return True
 
-        key = self.win.getkey()
-        if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
-            self.change_mode(Mode.VIEW)
+        if not (len(key) == 1 and ACCEPTED_NOTE_VALS.match(key)):
+            return True
 
-        if self.mode == Mode.VIEW or self.mode == Mode.EDIT:
-            if key == "KEY_RIGHT" or key == "KEY_LEFT":
-                direction = 1 if key == "KEY_RIGHT" else -1
-                self.cursor.move(direction)
-                self.post_cursor_move()
-            elif key == "kRIT5" or key == "kLFT5":      # w/ ctrl mod
-                direction = 1 if key == "kRIT5" else -1
-                self.cursor.move_big(direction)
-                self.post_cursor_move()
-            elif key == "kDC5":
-                self.remove_chord()
-            elif key == "\x00":     # ctrl + space
-                self.insert_chord()
-            elif key == "KEY_DC":
-                self.clear_chord()
-            elif key == " ":
-                self.cursor.move(2)
-                self.post_cursor_move()
-
-        if self.mode == Mode.VIEW:
-            if key == "e":
-                self.change_mode(Mode.EDIT)
-            elif key == "h":
-                self.current_help = get_help()
-                self.change_mode(Mode.HELP)
-            elif key == ":":
-                self.console.begin_cmd()
-            elif key == "c":
-                self.clipboard = self.cursor.chord.write()
-            elif key == "x":
-                self.clipboard = self.cursor.chord.write()
-                self.clear_chord()
-            elif key == "v":
-                if self.clipboard is None:
-                    self.console.error("Nothing to paste!")
-                else:
-                    state = CursorState(self.cursor)
-                    self.do(UndoReplaceChord(state, self.clipboard))
-                    self.update()
-            elif key == "z":
-                self.undo()
-            elif key == "Z":
-                self.redo()
-            elif key == "+":
-                if self.cursor.bar.can_change_size(2):
-                    self.do(UndoResizeBar(CursorState(self.cursor), 2))
-                    self.update()
-            elif key == "-":
-                self.shrink_bar()
-        elif self.mode == Mode.EDIT:
-            if key == "KEY_UP" or key == "KEY_DOWN":
-                direction = 1 if key == "KEY_UP" else -1
-                self.cursor.move_string(direction)
-                self.post_cursor_move()
-            elif key == "KEY_BACKSPACE":
-                state = CursorState(self.cursor)
-                new_val = self.cursor.note.value[:-1]
-                self.do(UndoSetNoteValue(state, new_val))
-                self.update()
-                self.first_entry = False
-            elif key == "KEY_SR" or key == "KEY_SF":
-                direction = 1 if key == "KEY_SR" else -1
-                state = CursorState(self.cursor)
-                self.do(UndoDuplicateNote(state, direction))
-                self.update()
-            elif len(key) == 1 and ACCEPTED_NOTE_VALS.match(key):
-                state = CursorState(self.cursor)
-                value = self.cursor.note.value
-                if self.first_entry:
-                    value = key
-                else:
-                    value += key
-                self.do(UndoSetNoteValue(state, value))
-                self.update()
-                self.first_entry = False
-
-        # self.console.echo("Char: {}".format(repr(key)).replace("\n", "newline"))
+        # here we finally can handle note input
+        state = CursorState(self.cursor)
+        value = self.cursor.note.value
+        if self.first_entry:
+            value = key
+        else:
+            value += key
+        self.do(UndoSetNoteValue(state, value))
+        self.update()
+        self.first_entry = False
 
         return True
 

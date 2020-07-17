@@ -1,21 +1,5 @@
-from enum import Enum
 from util.logger import logger
-
-class Action(Enum):
-    QUIT = 1
-    SAVE_QUIT = 2
-    SAVE = 3
-    HELP = 4
-    SET_TUNING = 5
-    UNDO = 6
-    REDO = 7
-    OPEN = 8
-
-
-class ActionMod(Enum):
-    NONE = 1
-    FORCE = 2
-
+from .action import Action, ActionMod, UserCmd
 
 ALIASES = {
     Action.QUIT: ["q", "quit"],
@@ -46,10 +30,6 @@ def parse_cmd(cmd):
     cmd = parts[0]
     for action in ALIASES:
         if cmd in ALIASES[action]:
-            return {
-                "action": action,
-                "modifier": modifier,
-                "parts": parts
-            }
+            return UserCmd(action, parts, modifier)
     return None
 

@@ -14,7 +14,7 @@ It's early days. Functionality is limited and contributions aren't really possib
 
 1. Make sure Python 3 and the `curses` module are installed.
 1. Clone the repo.
-1. Run ./src/main.py.
+1. Run ./tabby-dev.
 
 Availability on pip / debian / ubuntu may or may not happen, depending on how far this project gets.
 
