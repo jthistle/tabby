@@ -5,10 +5,11 @@ from .header import Header
 from .editor import Editor
 from .console import Console
 from .mode import Mode, mode_name
-
 from .action import Action
 from .hotkeys import key_to_action
 from .cmd_parser import parse_cmd
+
+from util.logger import logger
 
 class Tabby:
     def __init__(self):
@@ -66,6 +67,7 @@ class Tabby:
                 self.change_mode(Mode.VIEW)
                 return True
             action_to_use = key_to_action(key, self.mode)
+            # logger.debug("key: {}, action: {}".format(key, action_to_use.action if action_to_use is not None else None))
 
         if action_to_use is not None:
             return self.handle_cmd(action_to_use)
