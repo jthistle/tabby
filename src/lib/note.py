@@ -1,6 +1,9 @@
 
+from .element import ElementBase, ElementType
+
 class Note:
     def __init__(self, parent, string, value):
+        super().__init__(ElementType.NOTE)
         self.parent = parent
         self.string = string        # 0 is bottom string
         self.value = value

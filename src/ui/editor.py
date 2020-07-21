@@ -241,7 +241,7 @@ class Editor:
 
     def remove_chord(self):
         state = CursorState(self.cursor)
-        if not (self.cursor.bar_number == self.current_tab.nbars - 1
+        if not (self.cursor.bar_number == self.current_tab.nels - 1
                 and self.cursor.chord_number == self.cursor.bar.nchords - 1):
             self.cursor.move(1)
         else:
@@ -312,7 +312,7 @@ class Editor:
 
         state = CursorState(self.cursor)
         self.do(UndoResizeBar(state, 1/2))
-        bar = self.current_tab.bar(state.bar)
+        bar = self.current_tab.element(state.bar)
         n_to_use = state.chord // 2
         if n_to_use > bar.nchords - 1:
             n_to_use = bar.nchords - 1

@@ -1,4 +1,5 @@
 
+from .element import ElementBase, ElementType
 from .bar import Bar
 from .tuning import Tuning
 from .text import Text
@@ -16,12 +17,13 @@ class LayoutResult:
         self.strong = strong or []
 
 
-class Tab:
+class Tab(ElementBase):
     def __init__(self):
+        super().__init__(ElementType.TAB)
         self.default_tuning = Tuning()
         self.children = [Bar(self)] + [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
         self.max_width = 100
-        self.cursor = Cursor(self, self.bar(0).chord(0))
+        self.cursor = Cursor(self)
         self.undo_stack = UndoStack(self)
         self.meta = TabMeta(API_VERSION, "Untitled")
 
@@ -36,7 +38,7 @@ class Tab:
         use = ~ignore
 
         if use & 0b1:
-            bar = self.bar(state.bar)
+            bar = self.element(state.bar)
         if use & 0b10 and bar is not None:
             chord = bar.chord(state.chord)
         if use & 0b100 and chord is not None:
@@ -47,33 +49,39 @@ class Tab:
     @property
     def bars(self):
         for child in self.children:
-            if type(child) == Bar:
+            if child.is_bar:
                 yield child
 
+    def element(self, n):
+        return self.children[n]
+
     def bar(self, n):
+        """Only use this if you want only a bar by index, for example the first one. In all other
+        possible cases, please use `element`."""
         i = 0
         for child in self.children:
-            if type(child) == Bar:
+            if child.is_bar:
                 if i == n:
                     return child
                 i += 1
-
         return None
 
-    def bar_number(self, bar):
+    def el_number(self, element):
         i = 0
-        for child in self.children:
-            if type(child) == Bar:
-                if child == bar:
-                    return i
-                i += 1
+        for i in range(len(self.children)):
+            if self.children[i] == element:
+                return i
         return None
+
+    @property
+    def nels(self):
+        return len(self.children)
 
     @property
     def nbars(self):
         i = 0
         for child in self.children:
-            if type(child) == Bar:
+            if child.is_bar:
                 i += 1
 
         return i
@@ -81,7 +89,7 @@ class Tab:
     def prev_bar(self, bar):
         found = -1
         for i in range(len(self.children)):
-            if type(self.children[i]) == Bar:
+            if self.children[i].is_bar:
                 found = i
                 break
 
@@ -89,7 +97,7 @@ class Tab:
             return None
 
         for i in range(found - 1, -1, -1):
-            if type(children[i]) == Bar:
+            if children[i].is_bar:
                 return children[i]
 
         return None
@@ -128,9 +136,8 @@ class Tab:
 
         prev_element = None
         for child in self.children:
-            element_type = type(child)
-            if element_type == Text:
-                if prev_element and type(prev_element) == Bar:
+            if child.is_text:
+                if prev_element and prev_element.is_bar:
                     vertical_offset += prev_element.get_height()
 
                 lines.append("")
@@ -141,7 +148,7 @@ class Tab:
                 vertical_offset += 2    # for top and below padding
                 system_start = True
                 current_width = 0
-            elif element_type == Bar:
+            elif child.is_bar:
                 width = child.get_width(system_start)
                 if current_width + width > self.max_width and not system_start:
                     current_width = width
@@ -154,8 +161,8 @@ class Tab:
                 bar_lines = child.layout(system_start)
 
                 # Decide where to put the cursor
-                if child == self.cursor.bar:
-                    cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.chord)
+                if self.cursor.on_chord and child == self.cursor.bar:
+                    cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.element)
                     horizontal = padding_left + cols
                     if not system_start:
                         horizontal += len(lines[vertical_offset])
@@ -164,8 +171,8 @@ class Tab:
 
                     # Specific string highlighting
                     bottom_line = vertical_offset + child.nstrings - 1
-                    cursor_strong_highlight_start = [bottom_line - self.cursor.string, horizontal]
-                    cursor_strong_highlight_end   = [bottom_line - self.cursor.string, horizontal + curs_width - 1]
+                    cursor_strong_highlight_start = [bottom_line - self.cursor.position, horizontal]
+                    cursor_strong_highlight_end   = [bottom_line - self.cursor.position, horizontal + curs_width - 1]
 
                 for i in range(len(bar_lines)):
                     ind = i + vertical_offset
@@ -222,4 +229,4 @@ class Tab:
             self.children.append(new_obj)
 
         # Reset cursor
-        self.cursor = Cursor(self, self.bar(0).chord(0))
+        self.cursor = Cursor(self)

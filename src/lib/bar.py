@@ -1,12 +1,14 @@
 
+from .element import ElementBase, ElementType
 from .chord import Chord
 from .const import TICKS_IN_BAR
 from util.logger import logger
 
 DEFAULT_WIDTH = 16
 
-class Bar:
+class Bar(ElementBase):
     def __init__(self, parent):
+        super().__init__(ElementType.BAR)
         self.parent = parent
         self.chords = []            # < should be kept sorted
         self.tuning = self.parent.default_tuning
@@ -121,20 +123,28 @@ class Bar:
         self.chords.insert(n, new_chord)
 
     @property
-    def next_bar(self):
-        my_ind = self.parent.bar_number(self)
-        if my_ind == self.parent.nbars - 1:
+    def next_el(self):
+        my_ind = self.parent.el_number(self)
+        if my_ind == self.parent.nels - 1:
             return None
 
-        return self.parent.bar(my_ind + 1)
+        return self.parent.element(my_ind + 1)
 
     @property
-    def prev_bar(self):
-        my_ind = self.parent.bar_number(self)
+    def prev_el(self):
+        my_ind = self.parent.el_number(self)
         if my_ind == 0:
             return None
 
-        return self.parent.bar(my_ind - 1)
+        return self.parent.element(my_ind - 1)
+
+    @property
+    def first(self):
+        return self.chords[0]
+
+    @property
+    def last(self):
+        return self.chords[len(self.chords) - 1]
 
     def tuning_causes_loss(self, new_tuning):
         if len(new_tuning) >= self.nstrings:

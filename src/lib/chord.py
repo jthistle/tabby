@@ -1,8 +1,10 @@
 
+from .element import ElementBase, ElementType
 from .note import Note
 
-class Chord:
+class Chord(ElementBase):
     def __init__(self, parent):
+        super().__init__(ElementType.CHORD)
         self.parent = parent
         self.notes = []             # keep ordered by ascending string
 
@@ -47,23 +49,29 @@ class Chord:
         self.notes.insert(i, new_note)
         return new_note
 
-    def next_chord(self):
+    @property
+    def next_el(self):
         my_ind = self.parent.chords.index(self)
         if my_ind == self.parent.nchords - 1:
-            bar = self.parent.next_bar
-            if bar is None:
+            next_bar = self.parent.next_el
+            if next_bar is None:
                 return None
-            return bar.chord(0)
+            elif not next_bar.is_bar:
+                return next_bar
+            return next_bar.first
 
         return self.parent.chord(my_ind + 1)
 
-    def prev_chord(self):
+    @property
+    def prev_el(self):
         my_ind = self.parent.chords.index(self)
         if my_ind == 0:
-            bar = self.parent.prev_bar
-            if bar is None:
+            prev_bar = self.parent.prev_el
+            if prev_bar is None:
                 return None
-            return bar.chord(bar.nchords - 1)
+            elif prev_bar.is_bar:
+                return next_bar
+            return prev_bar.last
 
         return self.parent.chord(my_ind - 1)
 
