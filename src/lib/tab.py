@@ -156,17 +156,21 @@ class Tab(ElementBase):
 
                 lines.append("")
                 has_cursor = self.cursor.on_text and child == self.cursor.element
+                laid_out = child.layout()
+                line_lengths = child.line_lengths
                 pos = 0
-                for line in child.layout():
+                for i in range(len(laid_out)):
+                    line = laid_out[i]
+                    length = line_lengths[i]
                     if has_cursor:
                         vert = vertical_offset + padding_top
                         horz = padding_left
-                        if self.cursor.position < pos + len(line) and self.cursor.position >= pos:
+                        if self.cursor.position < pos + length and self.cursor.position >= pos:
                             cursor_highlight_strong.append((vert, horz + self.cursor.position - pos))
 
                         for i in range(len(line)):
                             cursor_highlight.append((vert, horz + i))
-                        pos += len(line)
+                        pos += length
                     lines.append(line)
                     vertical_offset += 1
                 lines.append("")

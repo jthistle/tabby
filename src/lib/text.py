@@ -13,7 +13,10 @@ class Text(ElementBase):
         if my_ind == self.parent.nels - 1:
             return None
 
-        return self.parent.element(my_ind + 1).first
+        nxt = self.parent.element(my_ind + 1)
+        if nxt.is_bar:
+            nxt = nxt.first
+        return nxt
 
     @property
     def prev_el(self):
@@ -21,14 +24,21 @@ class Text(ElementBase):
         if my_ind == 0:
             return None
 
-        return self.parent.element(my_ind - 1).last
+        prev = self.parent.element(my_ind - 1)
+        if prev.is_bar:
+            prev = prev.last
+        return prev
 
     @property
     def text_length(self):
-        return len(self.value.replace("\n", ""))
+        return len(self.value) + 1
+
+    @property
+    def line_lengths(self):
+        return [len(line) + 1 for line in self.value.split("\n")]
 
     def layout(self):
-        return self.value.split("\n")
+        return [" " if x == "" else x for x in self.value.split("\n")]
 
     def write(self):
         return {

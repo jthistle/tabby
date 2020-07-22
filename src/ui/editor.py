@@ -21,6 +21,7 @@ from lib.undo.remove_chord import UndoRemoveChord
 from lib.undo.insert_chord import UndoInsertChord
 from lib.undo.resize_bar import UndoResizeBar
 from lib.undo.insert_text_character import UndoInsertTextCharacter
+from lib.undo.delete_char import UndoDeleteChar
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -90,8 +91,7 @@ class Editor:
                 ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
                 self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
 
-        # Should be enough - we expect tab.strong to always be contained within tab.highlighted
-        self.last_cursor_draw = tab.highlighted
+        self.last_cursor_draw = tab.highlighted + tab.strong
 
     def clear_cursor(self):
         for pos in self.last_cursor_draw:
@@ -187,8 +187,12 @@ class Editor:
             state = CursorState(self.cursor)
             self.do(UndoDuplicateNote(state, direction))
             self.update()
+        elif action == Action.TEXT_BACKSPACE:
+            self.text_backspace()
+        elif action == Action.TEXT_DELETE:
+            self.text_delete()
         else:
-            self.console.echo("Unhandled action: {}, Modifier: {}".format(cmd.get("action"), cmd.get("modifier")))
+            self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
 
         return True
 
@@ -309,6 +313,23 @@ class Editor:
         self.file_path = path
         self.header.filename = path
         self.header.update()
+        self.update()
+
+    def text_backspace(self):
+        if self.cursor.position == 0:
+            return
+
+        state = CursorStateText(self.cursor)
+        self.do(UndoDeleteChar(state, -1))
+        self.cursor.move_position(-1)
+        self.update()
+
+    def text_delete(self):
+        if self.cursor.position >= self.cursor.element.text_length - 1:
+            return
+
+        state = CursorStateText(self.cursor)
+        self.do(UndoDeleteChar(state, 0))
         self.update()
 
     def shrink_bar(self):
