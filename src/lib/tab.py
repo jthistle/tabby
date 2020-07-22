@@ -23,7 +23,7 @@ class Tab(ElementBase):
     def __init__(self):
         super().__init__(ElementType.TAB)
         self.default_tuning = Tuning()
-        self.children = [Bar(self)] + [Text(self, "Hello, world!\nLorem ipsum dolar")] + [Bar(self) for i in range(12)]
+        self.children = [Bar(self)] + [Text(self, "The quick bro=wn fox jumps. Over the lazy! Dog!\nLorem    ipsum   dolar.")] + [Bar(self) for i in range(12)]
         self.max_width = 100
         self.cursor = Cursor(self)
         self.undo_stack = UndoStack(self)

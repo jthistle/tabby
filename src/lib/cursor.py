@@ -1,6 +1,10 @@
 
+import re
+
 from util.logger import logger
 from .note import Note
+
+WHITESPACE = re.compile(r"\s")
 
 class Cursor:
     def __init__(self, tab):
@@ -87,3 +91,30 @@ class Cursor:
             self.move_string(direction)
         elif self.on_text:
             self.move_text_pos(direction)
+
+    def move_position_big(self, direction):
+        """Moves around text (only, currently) up to a boundary delimited by a non alphanumeric character. -1 for left, +1 for right"""
+        assert self.on_text
+        max_len = len(self.element.value)
+        direction //= abs(direction)
+        is_init = True
+        wait_for_non_whitespace = False
+        while True:
+            next_pos = self.position + direction
+            if next_pos >= max_len or next_pos < 0:
+                break
+            next_ch = self.element.value[self.position + direction]
+            if next_ch == "\n" and not is_init:
+                break
+
+            self.move_text_pos(direction)
+            if not wait_for_non_whitespace:
+                if WHITESPACE.match(next_ch):
+                    wait_for_non_whitespace = True
+                elif not (next_ch.isalnum() or next_ch == "_") and not is_init:
+                    break
+            elif not WHITESPACE.match(next_ch):
+                    break
+
+            self.position = next_pos
+            is_init = False
