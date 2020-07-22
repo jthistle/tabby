@@ -7,6 +7,8 @@ from .cursor import Cursor
 from util.logger import logger
 from .undo.stack import UndoStack
 from .tab_meta import TabMeta
+from .undo.cursor_state import CursorState
+from .undo.cursor_state_text import CursorStateText
 
 from meta.api import API_VERSION
 
@@ -31,9 +33,7 @@ class Tab(ElementBase):
         self.undo_stack.do(action)
         self.undo_stack.redo()
 
-    def hydrate_state(self, state, ignore = 0):
-        """Take a cursor state and return the objects the it points to.
-            ignore is a bitmask: 1 = bar, 2 = chord, 4 = note."""
+    def hydrate_state_normal(self, state, ignore):
         bar = chord = note = None
         use = ~ignore
 
@@ -45,6 +45,23 @@ class Tab(ElementBase):
             note = chord.get_note(state.string)
 
         return bar, chord, note
+
+    def hydrate_state_text(self, state):
+        text = self.element(state.text)
+        position = state.position
+
+        return text, position
+
+    def hydrate_state(self, state, ignore = 0):
+        """Take a cursor state and return the objects the it points to.
+            ignore is a bitmask: 1 = bar, 2 = chord, 4 = note, for normal cursor state."""
+
+        if type(state) == CursorState:
+            return self.hydrate_state_normal(state, ignore)
+        elif type(state) == CursorStateText:
+            return self.hydrate_state_text(state)
+
+        return None
 
     @property
     def bars(self):

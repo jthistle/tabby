@@ -11,6 +11,7 @@ from .mode import Mode, mode_name
 from .const import FILE_EXTENSION
 
 from lib.undo.cursor_state import CursorState
+from lib.undo.cursor_state_text import CursorStateText
 from lib.undo.set_note_value import UndoSetNoteValue
 from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
@@ -19,6 +20,7 @@ from lib.undo.clear_chord import UndoClearChord
 from lib.undo.remove_chord import UndoRemoveChord
 from lib.undo.insert_chord import UndoInsertChord
 from lib.undo.resize_bar import UndoResizeBar
+from lib.undo.insert_text_character import UndoInsertTextCharacter
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -85,7 +87,6 @@ class Editor:
         # Strong highlighting in EDIT mode only
         if self.mode == Mode.EDIT:
             for pos in tab.strong:
-                logger.debug(pos)
                 ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
                 self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
 
@@ -324,10 +325,7 @@ class Editor:
         self.cursor.element = bar.chord(n_to_use)
         self.update()
 
-    def handle_input(self, key):
-        if self.mode != Mode.EDIT:
-            return True
-
+    def note_input(self, key):
         if not (len(key) == 1 and ACCEPTED_NOTE_VALS.match(key)):
             return True
 
@@ -342,6 +340,30 @@ class Editor:
         self.update()
         self.first_entry = False
 
+        return True
+
+    def text_input(self, key):
+        if not len(key) == 1:
+            return True
+
+        if ord(key) < 32 and ord(key) not in (9, 10, 13):
+            return True
+
+        state = CursorStateText(self.cursor)
+        self.do(UndoInsertTextCharacter(state, key))
+        self.cursor.move_position(1)
+        self.update()
+
+        return True
+
+    def handle_input(self, key):
+        if self.mode != Mode.EDIT:
+            return True
+
+        if self.cursor.on_chord:
+            return self.note_input(key)
+        elif self.cursor.on_text:
+            return self.text_input(key)
         return True
 
     def draw(self):

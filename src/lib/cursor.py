@@ -27,6 +27,11 @@ class Cursor:
         return self.element.get_note(self.position)
 
     @property
+    def el_number(self):
+        assert not self.on_chord
+        return self.tab.el_number(self.element)
+
+    @property
     def bar_number(self):
         """Slightly confusingly, this is actually the _element_ number of the current bar,
         not the bar number."""
