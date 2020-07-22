@@ -69,8 +69,8 @@ class Chord(ElementBase):
             prev_bar = self.parent.prev_el
             if prev_bar is None:
                 return None
-            elif prev_bar.is_bar:
-                return next_bar
+            elif not prev_bar.is_bar:
+                return prev_bar
             return prev_bar.last
 
         return self.parent.chord(my_ind - 1)

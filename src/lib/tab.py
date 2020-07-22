@@ -120,11 +120,8 @@ class Tab(ElementBase):
         system_start = True                 # whether we're at a system start or not
         current_bar_num = 0                 # the current bar number, beginning at 0
 
-        cursor_highlight_start = [0, 0]     # line, column
-        cursor_highlight_end = [0, 0]
-
-        cursor_strong_highlight_start = [0, 0]
-        cursor_strong_highlight_end = [0, 0]
+        cursor_highlight = []
+        cursor_highlight_strong = []
 
         padding_left = 1                    # global score padding
         padding_top = 1
@@ -141,7 +138,18 @@ class Tab(ElementBase):
                     vertical_offset += prev_element.get_height()
 
                 lines.append("")
+                has_cursor = self.cursor.on_text and child == self.cursor.element
+                pos = 0
                 for line in child.layout():
+                    if has_cursor:
+                        vert = vertical_offset + padding_top
+                        horz = padding_left
+                        if pos + len(line) > self.cursor.position:
+                            cursor_highlight_strong.append((vert, horz + self.cursor.position - pos))
+
+                        for i in range(len(line)):
+                            cursor_highlight.append((vert, horz + i))
+                        pos += len(line)
                     lines.append(line)
                     vertical_offset += 1
                 lines.append("")
@@ -169,10 +177,18 @@ class Tab(ElementBase):
                     cursor_highlight_start = [vertical_offset, horizontal]
                     cursor_highlight_end = [vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
 
+                    for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):
+                        for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
+                            cursor_highlight.append((y, x))
+
                     # Specific string highlighting
                     bottom_line = vertical_offset + child.nstrings - 1
                     cursor_strong_highlight_start = [bottom_line - self.cursor.position, horizontal]
                     cursor_strong_highlight_end   = [bottom_line - self.cursor.position, horizontal + curs_width - 1]
+
+                    for y in range(cursor_strong_highlight_start[0], cursor_strong_highlight_end[0] + 1):
+                        for x in range(cursor_strong_highlight_start[1], cursor_strong_highlight_end[1] + 1):
+                            cursor_highlight_strong.append((y, x))
 
                 for i in range(len(bar_lines)):
                     ind = i + vertical_offset
@@ -186,18 +202,8 @@ class Tab(ElementBase):
 
             prev_element = child
 
-        highlighted = []
-        for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):
-            for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
-                highlighted.append((y, x))
-
-        strong_highlighted = []
-        for y in range(cursor_strong_highlight_start[0], cursor_strong_highlight_end[0] + 1):
-            for x in range(cursor_strong_highlight_start[1], cursor_strong_highlight_end[1] + 1):
-                strong_highlighted.append((y, x))
-
         txt = "\n".join([" " * padding_left + x for x in lines])
-        return LayoutResult(txt, highlighted, strong_highlighted)
+        return LayoutResult(txt, cursor_highlight, cursor_highlight_strong)
 
     def write(self):
         written_obj = {
