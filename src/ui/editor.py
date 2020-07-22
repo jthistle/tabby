@@ -143,7 +143,7 @@ class Editor:
             self.cursor.move(direction)
             self.post_cursor_move()
         elif action in (Action.CURSOR_MOVE_BIG_RIGHT, Action.CURSOR_MOVE_BIG_LEFT):
-            direction = 1 if Action.CURSOR_MOVE_BIG_RIGHT else -1
+            direction = 1 if action == Action.CURSOR_MOVE_BIG_RIGHT else -1
             self.cursor.move_big(direction)
             self.post_cursor_move()
         elif action == Action.CURSOR_MOVE_TWO_RIGHT:
