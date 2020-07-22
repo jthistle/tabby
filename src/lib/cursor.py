@@ -40,6 +40,7 @@ class Cursor:
 
     def move(self, direction):
         """- for left, + for right"""
+        last_type = self.element.type
         for i in range(abs(direction)):
             new_el = None
             if direction < 0:
@@ -51,21 +52,20 @@ class Cursor:
                 break
             self.element = new_el
 
+        # Reset position to prevent out of bounds crash
+        if self.element.type != last_type:
+            self.position = 0
+
     def move_big(self, direction):
         """Moves around by the bar. -1 for left, +1 for right"""
-        if direction == -1:
-            prev_bar = None
-            if self.chord.parent.chord_number(self.chord) == 0:
-                prev_bar = self.chord.parent.prev_bar
-
-            if not prev_bar:
-                prev_bar = self.bar
-            self.chord = prev_bar.chord(0)
-        elif direction == 1:
-            next_bar = self.chord.parent.next_bar
-            if not next_bar:
-                next_bar = self.bar
-            self.chord = next_bar.chord(0)
+        last = None
+        last_major = self.bar if self.on_chord else self.element
+        while self.element != last:
+            last = self.element
+            self.move(direction)
+            new_major = self.bar if self.on_chord else self.element
+            if new_major != last_major:
+                break
 
     def move_string(self, direction):
         cur_bar = self.bar
@@ -73,8 +73,8 @@ class Cursor:
         self.position = min(max_s, max(0, self.position + direction))
 
     def move_text_pos(self, direction):
-        # TODO
-        self.position += direction
+        max_pos = self.element.text_length - 1
+        self.position = min(max_pos, max(0, self.position + direction))
 
     def move_position(self, direction):
         """+1 for up, -1 for down in chord mode, otherwise right and left respectively."""

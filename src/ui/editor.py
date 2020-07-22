@@ -85,6 +85,7 @@ class Editor:
         # Strong highlighting in EDIT mode only
         if self.mode == Mode.EDIT:
             for pos in tab.strong:
+                logger.debug(pos)
                 ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
                 self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
 
@@ -149,7 +150,11 @@ class Editor:
             self.post_cursor_move()
         elif action in (Action.CURSOR_MOVE_UP_STRING, Action.CURSOR_MOVE_DOWN_STRING):
             direction = 1 if action == Action.CURSOR_MOVE_UP_STRING else -1
-            self.cursor.move_string(direction)
+            self.cursor.move_position(direction)
+            self.post_cursor_move()
+        elif action in (Action.CURSOR_MOVE_POSITION_RIGHT, Action.CURSOR_MOVE_POSITION_LEFT):
+            direction = 1 if action == Action.CURSOR_MOVE_POSITION_RIGHT else -1
+            self.cursor.move_position(direction)
             self.post_cursor_move()
         elif action == Action.NOTE_DELETE_LAST:
             state = CursorState(self.cursor)
@@ -164,9 +169,9 @@ class Editor:
         elif action == Action.CLEAR_CHORD:
             self.clear_chord()
         elif action == Action.COPY:
-            self.clipboard = self.cursor.chord.write()
+            self.clipboard = self.cursor.element.write()
         elif action == Action.CUT:
-            self.clipboard = self.cursor.chord.write()
+            self.clipboard = self.cursor.element.write()
             self.clear_chord()
         elif action == Action.PASTE:
             self.paste()
@@ -316,7 +321,7 @@ class Editor:
         n_to_use = state.chord // 2
         if n_to_use > bar.nchords - 1:
             n_to_use = bar.nchords - 1
-        self.cursor.chord = bar.chord(n_to_use)
+        self.cursor.element = bar.chord(n_to_use)
         self.update()
 
     def handle_input(self, key):

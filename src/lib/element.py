@@ -2,6 +2,7 @@
 from enum import Enum
 
 class ElementType(Enum):
+    ANY = 0
     TAB = 1
     BAR = 2
     TEXT = 3

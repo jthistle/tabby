@@ -1,7 +1,7 @@
 
 from .element import ElementBase, ElementType
 
-class Note:
+class Note(ElementBase):
     def __init__(self, parent, string, value):
         super().__init__(ElementType.NOTE)
         self.parent = parent

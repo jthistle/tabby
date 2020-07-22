@@ -23,6 +23,10 @@ class Text(ElementBase):
 
         return self.parent.element(my_ind - 1).last
 
+    @property
+    def text_length(self):
+        return len(self.value.replace("\n", ""))
+
     def layout(self):
         return self.value.split("\n")
 

@@ -21,7 +21,7 @@ class Tab(ElementBase):
     def __init__(self):
         super().__init__(ElementType.TAB)
         self.default_tuning = Tuning()
-        self.children = [Bar(self)] + [Text(self, "Hello, world!")] + [Bar(self) for i in range(12)]
+        self.children = [Bar(self)] + [Text(self, "Hello, world!\nLorem ipsum dolar")] + [Bar(self) for i in range(12)]
         self.max_width = 100
         self.cursor = Cursor(self)
         self.undo_stack = UndoStack(self)
@@ -144,7 +144,7 @@ class Tab(ElementBase):
                     if has_cursor:
                         vert = vertical_offset + padding_top
                         horz = padding_left
-                        if pos + len(line) > self.cursor.position:
+                        if self.cursor.position < pos + len(line) and self.cursor.position >= pos:
                             cursor_highlight_strong.append((vert, horz + self.cursor.position - pos))
 
                         for i in range(len(line)):

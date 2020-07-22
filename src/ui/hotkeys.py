@@ -1,24 +1,30 @@
 
+from lib.element import ElementType
 from .action import Action, UserCmd
 from .mode import Mode
 
 class ActionHotkeyLink:
-    def __init__(self, action, keys, modes):
+    def __init__(self, action, keys, modes, selections = None):
         self.keys = keys
         self.modes = modes
         self.action = action
+        self.selections = selections or [ElementType.ANY]
 
 
 ACTION_HOTKEY_MAP = [
     ActionHotkeyLink(Action.UNDO, ["z"], [Mode.VIEW]),
     ActionHotkeyLink(Action.REDO, ["Z"], [Mode.VIEW]),
-    ActionHotkeyLink(Action.CURSOR_MOVE_LEFT, ["KEY_LEFT"], [Mode.VIEW, Mode.EDIT]),
-    ActionHotkeyLink(Action.CURSOR_MOVE_RIGHT, ["KEY_RIGHT"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_LEFT, ["KEY_LEFT"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_RIGHT, ["KEY_RIGHT"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_LEFT, ["KEY_LEFT"], [Mode.EDIT], [ElementType.CHORD]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_RIGHT, ["KEY_RIGHT"], [Mode.EDIT], [ElementType.CHORD]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_POSITION_RIGHT, ["KEY_RIGHT"], [Mode.EDIT], [ElementType.TEXT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_POSITION_LEFT, ["KEY_LEFT"], [Mode.EDIT], [ElementType.TEXT]),
     ActionHotkeyLink(Action.CURSOR_MOVE_BIG_RIGHT, ["kRIT5"], [Mode.VIEW, Mode.EDIT]),
     ActionHotkeyLink(Action.CURSOR_MOVE_BIG_LEFT, ["kLFT5"], [Mode.VIEW, Mode.EDIT]),
-    ActionHotkeyLink(Action.CURSOR_MOVE_TWO_RIGHT, [" "], [Mode.VIEW, Mode.EDIT]),
-    ActionHotkeyLink(Action.CURSOR_MOVE_UP_STRING, ["KEY_UP"], [Mode.EDIT]),
-    ActionHotkeyLink(Action.CURSOR_MOVE_DOWN_STRING, ["KEY_DOWN"], [Mode.EDIT]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_TWO_RIGHT, [" "], [Mode.VIEW, Mode.EDIT], [ElementType.CHORD]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_UP_STRING, ["KEY_UP"], [Mode.EDIT], [ElementType.CHORD]),
+    ActionHotkeyLink(Action.CURSOR_MOVE_DOWN_STRING, ["KEY_DOWN"], [Mode.EDIT], [ElementType.CHORD]),
     ActionHotkeyLink(Action.MODE_EDIT, ["e"], [Mode.VIEW]),
     ActionHotkeyLink(Action.MODE_HELP, ["h"], [Mode.VIEW]),
     ActionHotkeyLink(Action.BEGIN_CMD, [":"], [Mode.VIEW]),
@@ -36,9 +42,10 @@ ACTION_HOTKEY_MAP = [
 ]
 
 
-def key_to_action(key, mode):
+def key_to_action(key, mode, selected_type):
     for link in ACTION_HOTKEY_MAP:
-        if key in link.keys and mode in link.modes:
+        if key in link.keys and mode in link.modes \
+          and (ElementType.ANY in link.selections or selected_type in link.selections or selected_type == ElementType.ANY):
             return UserCmd(link.action)
 
     return None

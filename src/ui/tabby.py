@@ -1,6 +1,7 @@
 
 import curses
 
+from lib.element import ElementType
 from .header import Header
 from .editor import Editor
 from .console import Console
@@ -40,8 +41,7 @@ class Tabby:
 
         if new_mode != Mode.VIEW:
             self.console.echo("-- {} MODE --".format(mode_name(new_mode)))
-
-        if old_mode == Mode.VIEW:
+        else:
             self.console.clear()
 
 
@@ -66,7 +66,10 @@ class Tabby:
             if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
                 self.change_mode(Mode.VIEW)
                 return True
-            action_to_use = key_to_action(key, self.mode)
+            selected_type = ElementType.ANY
+            if self.editor:
+                selected_type = self.editor.cursor.element.type
+            action_to_use = key_to_action(key, self.mode, selected_type)
             # logger.debug("key: {}, action: {}".format(key, action_to_use.action if action_to_use is not None else None))
 
         if action_to_use is not None:
