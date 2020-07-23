@@ -2,7 +2,7 @@
 from .element import ElementBase, ElementType
 
 class Text(ElementBase):
-    def __init__(self, parent, value):
+    def __init__(self, parent, value = ""):
         super().__init__(ElementType.TEXT)
         self.parent = parent
         self.value = value

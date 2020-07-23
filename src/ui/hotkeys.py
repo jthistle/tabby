@@ -45,6 +45,8 @@ ACTION_HOTKEY_MAP = [
     ActionHotkeyLink(Action.CLEAR_CHORD, ["KEY_DC"], [Mode.VIEW, Mode.EDIT], [ElementType.CHORD]),
     ActionHotkeyLink(Action.TEXT_BACKSPACE, ["KEY_BACKSPACE"], [Mode.EDIT], [ElementType.TEXT]),
     ActionHotkeyLink(Action.TEXT_DELETE, ["KEY_DC"], [Mode.EDIT], [ElementType.TEXT]),
+    ActionHotkeyLink(Action.ADD_TEXT, ["T"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.REMOVE_TEXT, ["kDC5"], [Mode.VIEW], [ElementType.TEXT]),
 ]
 
 

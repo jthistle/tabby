@@ -5,6 +5,7 @@ from os.path import expanduser, splitext
 
 from .action import Action, ActionMod
 from lib.tab import Tab
+from lib.text import Text
 from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
@@ -12,6 +13,7 @@ from .const import FILE_EXTENSION
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
+from lib.undo.cursor_state_generic import CursorStateGeneric
 from lib.undo.set_note_value import UndoSetNoteValue
 from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
@@ -22,6 +24,7 @@ from lib.undo.insert_chord import UndoInsertChord
 from lib.undo.resize_bar import UndoResizeBar
 from lib.undo.insert_text_character import UndoInsertTextCharacter
 from lib.undo.delete_char import UndoDeleteChar
+from lib.undo.insert_text import UndoInsertText
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -195,6 +198,11 @@ class Editor:
             self.text_backspace()
         elif action == Action.TEXT_DELETE:
             self.text_delete()
+        elif action == Action.ADD_TEXT:
+            state = CursorStateGeneric(self.cursor)
+            self.do(UndoInsertText(state, ""))
+            self.cursor.element = self.current_tab.element(state.element)
+            self.update()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
 
