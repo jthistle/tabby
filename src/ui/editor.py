@@ -181,7 +181,10 @@ class Editor:
             self.clipboard = self.cursor.element.write()
         elif action == Action.CUT:
             self.clipboard = self.cursor.element.write()
-            self.clear_chord()
+            if self.cursor.on_chord:
+                self.clear_chord()
+            elif self.cursor.on_text:
+                self.remove_text()
         elif action == Action.PASTE:
             self.paste()
         elif action == Action.BAR_GROW:
@@ -206,22 +209,33 @@ class Editor:
             self.parent.change_mode(Mode.EDIT)
             self.update()
         elif action == Action.REMOVE_TEXT:
-            state = CursorStateText(self.cursor)
-            text = self.cursor.element
-            self.do(UndoRemoveText(state, text))
-            self.update()
+            self.remove_text()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
 
         return True
 
+    def remove_text(self):
+        state = CursorStateText(self.cursor)
+        text = self.cursor.element
+        self.do(UndoRemoveText(state, text))
+        self.update()
+
     def paste(self):
         if self.clipboard is None:
             self.console.error("Nothing to paste!")
         else:
-            state = CursorState(self.cursor)
-            self.do(UndoReplaceChord(state, self.clipboard))
-            self.update()
+            el_type = self.clipboard.get("type")
+            if el_type == "Chord":
+                state = CursorState(self.cursor)
+                self.do(UndoReplaceChord(state, self.clipboard))
+                self.update()
+            elif el_type == "Text":
+                state = CursorStateGeneric(self.cursor)
+                self.do(UndoInsertText(state, ""))
+                self.cursor.element = self.current_tab.element(state.element)
+                self.cursor.element.read(self.clipboard)
+                self.update()
 
     def set_tuning(self, strings):
         if len(strings) == 0:
