@@ -8,11 +8,14 @@ class Header:
         self.win.bkgd(" ", curses.A_REVERSE | curses.A_BOLD)
         self.filename = "Untitled"
 
+        self.dirty = False
+
         # Initial update
         self.update()
 
     def update(self):
-        header_txt = "{} - {}".format(self.filename, NAME)
+        dirty = "*" if self.dirty else ""
+        header_txt = "{}{} - {}".format(self.filename, dirty, NAME)
         self.win.addstr(0, (self.width - len(header_txt)) // 2, header_txt)
         self.draw()
 

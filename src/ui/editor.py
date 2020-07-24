@@ -45,6 +45,7 @@ class Editor:
         self.first_entry = True     # first entry after moving the cursor to this position
         self.clipboard = None
         self.file_path = None
+        self.__dirty = False
 
         # Initial update
         curses.curs_set(0)
@@ -66,8 +67,19 @@ class Editor:
     def cursor(self):
         return self.current_tab.cursor
 
+    @property
+    def dirty(self):
+        return self.__dirty
+
+    @dirty.setter
+    def dirty(self, val):
+        self.__dirty = val
+        self.header.dirty = val
+        self.header.update()
+
     def do(self, action):
         self.current_tab.do(action)
+        self.dirty = True
 
     def update(self):
         self.win.erase()
@@ -129,13 +141,15 @@ class Editor:
             return True
         elif action == Action.OPEN:
             if len(parts) == 1:
-                self.console.error("Must specify file location!")
+                self.console.error("Must specify file location")
                 return True
 
             path = " ".join(parts[1:]).strip()
             self.read(path)
         elif action == Action.QUIT:
-            # TODO unsaved changes check
+            if self.dirty and not force:
+                self.console.error("Tab has unsaved changes, append ! to force quit")
+                return True
             return False
         elif action == Action.SET_TUNING:
             strings = [x.strip() for x in parts[1:] if x.strip() != ""]
@@ -332,6 +346,7 @@ class Editor:
             return False
 
         self.file_path = path_to_use
+        self.dirty = False
         self.header.filename = path_to_use
         self.header.update()
         self.console.echo("Saved successfully")
@@ -362,6 +377,7 @@ class Editor:
 
         self.current_tab = new_tab
         self.file_path = path
+        self.dirty = False
         self.header.filename = path
         self.header.update()
         self.update()
