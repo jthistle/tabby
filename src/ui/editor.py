@@ -202,6 +202,7 @@ class Editor:
             state = CursorStateGeneric(self.cursor)
             self.do(UndoInsertText(state, ""))
             self.cursor.element = self.current_tab.element(state.element)
+            self.parent.change_mode(Mode.EDIT)
             self.update()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
