@@ -31,5 +31,6 @@ class UndoStack:
 
         action = self.actions[self.position]
         action.undo(self.tab)
+        action.reset_cursor(self.tab)
         self.position -= 1
         return True, action
