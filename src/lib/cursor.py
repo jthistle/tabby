@@ -65,6 +65,14 @@ class Cursor:
         if self.element.type != last_type:
             self.position = 0
 
+    def move_away(self, direction):
+        """Try to move away in a given direction, but move the other direction if this fails."""
+        init_el = self.element
+        self.move(direction)
+        if init_el != self.element:
+            return
+        self.move(-direction)
+
     def move_big(self, direction):
         """Moves around by the bar. -1 for left, +1 for right"""
         last = None

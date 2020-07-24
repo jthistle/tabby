@@ -25,6 +25,7 @@ from lib.undo.resize_bar import UndoResizeBar
 from lib.undo.insert_text_character import UndoInsertTextCharacter
 from lib.undo.delete_char import UndoDeleteChar
 from lib.undo.insert_text import UndoInsertText
+from lib.undo.remove_text import UndoRemoveText
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -203,6 +204,11 @@ class Editor:
             self.do(UndoInsertText(state, ""))
             self.cursor.element = self.current_tab.element(state.element)
             self.parent.change_mode(Mode.EDIT)
+            self.update()
+        elif action == Action.REMOVE_TEXT:
+            state = CursorStateText(self.cursor)
+            text = self.cursor.element
+            self.do(UndoRemoveText(state, text))
             self.update()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
