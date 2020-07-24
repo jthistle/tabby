@@ -146,7 +146,7 @@ class Editor:
             self.first_entry = True
 
         if old_mode in (Mode.EDIT, Mode.VIEW):
-            self.update_cursor(tab)
+            self.update_cursor()
 
     def handle_cmd(self, user_cmd):
         """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.

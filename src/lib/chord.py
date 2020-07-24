@@ -1,4 +1,5 @@
 
+from .layout import LayoutFragment, LayoutAnchor, LayoutAnchorName
 from .element import ElementBase, ElementType
 from .note import Note
 
@@ -7,6 +8,7 @@ class Chord(ElementBase):
         super().__init__(ElementType.CHORD)
         self.parent = parent
         self.notes = []             # keep ordered by ascending string
+        self.annotation = ""
 
     def get_width(self):
         max_w = 1
@@ -14,13 +16,26 @@ class Chord(ElementBase):
             max_w = max(max_w, note.get_width())
         return max_w
 
-    def layout(self) -> [str]:
-        width = self.get_width()
-        lines = ["-" * width] * self.parent.nstrings
-        for note in self.notes:
-            lines[note.string] = note.layout().ljust(width, "-")
+    def get_height(self):
+        height = self.parent.nstrings
+        if self.annotation != "":
+            height += 2
+        return height
 
-        return [x for x in reversed(lines)]
+    def layout(self) -> LayoutFragment:
+        width = self.get_width()
+        lines = []
+        anchor_point = 0
+        if self.annotation != "":
+            lines += [self.annotation.ljust(width, " ")]
+            anchor_point += 1
+
+        notes = ["-" * width] * self.parent.nstrings
+        for note in self.notes:
+            notes[note.string] = note.layout().ljust(width, "-")
+
+        lines += reversed(notes)
+        return LayoutFragment(lines, [LayoutAnchor(LayoutAnchorName.HIGHEST_STRING, anchor_point)])
 
     @property
     def empty(self):
@@ -87,10 +102,16 @@ class Chord(ElementBase):
             "notes": [x.write() for x in self.notes]
         }
 
+        if self.annotation != "":
+            obj["annotation"] = self.annotation
+
         return obj
 
     def read(self, obj):
         assert obj.get("type") == "Chord"
+
+        if "annotation" in obj:
+            self.annotation = obj["annotation"]
 
         self.notes = []
         for note in obj.get("notes"):

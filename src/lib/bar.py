@@ -1,4 +1,5 @@
 
+from .layout import LayoutFragment, LayoutAnchor, LayoutAnchorName
 from .element import ElementBase, ElementType
 from .chord import Chord
 from .const import TICKS_IN_BAR
@@ -61,34 +62,35 @@ class Bar(ElementBase):
         return width + 2 + 1 + (self.tuning.get_width() + 1 if is_system_start else 0)
 
     def get_height(self):
-        return self.nstrings
+        height = 0
+        for chord in self.chords:
+            height = max(height, chord.get_height())
+        return height
 
-    def layout(self, is_system_start) -> [str]:
-        lines = []
+    def layout(self, is_system_start) -> LayoutFragment:
         tuning_width = self.tuning.get_width()
+        initial_lines = []
         for i in range(self.nstrings):
-            line = []
+            line = ""
 
             if is_system_start:
-                line.append(self.tuning.at(i).ljust(tuning_width, " "))
-                line.append("|")
+                line += self.tuning.at(i).ljust(tuning_width, " ") + "|"
 
             # Initial padding
-            line.append("-")
-            lines.insert(0, line)
+            line += "-"
+            initial_lines.insert(0, line)
+
+        final_frag = LayoutFragment(initial_lines, [LayoutAnchor(LayoutAnchorName.HIGHEST_STRING, 0)])
 
         # Render chords
         for chord in self.chords:
-            chord_lines = chord.layout()
-            for i in range(len(chord_lines)):
-                lines[i] += chord_lines[i]
+            final_frag = final_frag.match_with(chord.layout())
 
-        for i in range(self.nstrings):
-            # Final padding
-            lines[i].append("-")
-            lines[i].append("|")
+        end_lines = ["-|"] * self.nstrings
+        end_frag = LayoutFragment(end_lines, [LayoutAnchor(LayoutAnchorName.HIGHEST_STRING, 0)])
+        final_frag = final_frag.match_with(end_frag)
 
-        return ["".join(line) for line in lines]
+        return final_frag
 
     def get_cursor_pos_and_width(self, is_system_start, cursor_chord):
         """Returns (`pos`, `width`), where:
