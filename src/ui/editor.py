@@ -34,7 +34,8 @@ ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 class Editor:
     def __init__(self, parent):
         self.parent = parent
-        self.win = curses.newwin(curses.LINES - 2, curses.COLS, 1, 0)
+        self.dimensions = (curses.LINES - 2, curses.COLS)
+        self.win = curses.newwin(*self.dimensions, 1, 0)
         self.win.keypad(True)
 
         self.viewport_pos = 0       # vertically
@@ -81,18 +82,20 @@ class Editor:
         self.current_tab.do(action)
         self.dirty = True
 
-    def update(self):
+    def update(self, tab = None):
         self.win.erase()
-        tab = self.current_tab.layout()
-        self.win.addstr(self.viewport_pos, 0, tab.txt)
+
+        if tab is None:
+            tab = self.current_tab.layout()
+
+        lines = tab.txt.split("\n")[self.viewport_pos:self.viewport_pos + self.dimensions[0]]
+        self.win.addstr(0, 0, "\n".join(lines))
 
         self.update_cursor(tab)
         self.draw()
 
     def update_cursor(self, tab = None):
-        # TODO: re-layout-ing the entire tab for every cursor move probably isn't a good idea.
-        # In the future, just work out a way of doing it without doing this.
-        if not tab:
+        if tab is None:
             tab = self.current_tab.layout()
 
         # Remove last highlighting if only updating cursor
@@ -100,16 +103,22 @@ class Editor:
 
         # Process new cursor highlighting
         for pos in tab.highlighted:
-            ch = self.win.inch(pos[0], pos[1])
-            self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_DIM.value) | curses.A_DIM)
+            draw_pos = (pos[0] - self.viewport_pos, pos[1])
+            if draw_pos[0] >= self.dimensions[0]:
+                continue
+            ch = self.win.inch(*draw_pos)
+            self.win.addch(*draw_pos, ch, curses.color_pair(Pair.HIGHLIGHT_DIM.value) | curses.A_DIM)
+            self.last_cursor_draw.append(draw_pos)
 
         # Strong highlighting in EDIT mode only
         if self.mode == Mode.EDIT:
             for pos in tab.strong:
-                ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
-                self.win.addch(pos[0], pos[1], ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
-
-        self.last_cursor_draw = tab.highlighted + tab.strong
+                draw_pos = (pos[0] - self.viewport_pos, pos[1])
+                if draw_pos[0] >= self.dimensions[0]:
+                    continue
+                ch = self.win.inch(*draw_pos) & curses.A_CHARTEXT
+                self.win.addch(*draw_pos, ch, curses.color_pair(Pair.HIGHLIGHT_MAIN.value))
+                self.last_cursor_draw.append(draw_pos)
 
     def clear_cursor(self):
         for pos in self.last_cursor_draw:
@@ -117,12 +126,27 @@ class Editor:
             ch = self.win.inch(pos[0], pos[1]) & curses.A_CHARTEXT
             self.win.addch(pos[0], pos[1], ch, 0)
 
+    def move_viewport_for_cursor(self, tab):
+        """Also calls an update on the tab and the cursor."""
+        min_h = self.dimensions[0] + self.viewport_pos
+        max_h = 0
+        for pos in tab.highlighted + tab.strong:
+            min_h = min(min_h, pos[0])
+            max_h = max(max_h, pos[0])
+
+        if min_h < self.viewport_pos:
+            self.viewport_pos = max(0, min_h - 1)
+        elif max_h >= self.viewport_pos + self.dimensions[0]:
+            self.viewport_pos = max_h - self.dimensions[0] + 1
+
+        self.update(tab)
+
     def on_mode_change(self, old_mode, new_mode):
         if new_mode == Mode.EDIT:
             self.first_entry = True
 
         if old_mode in (Mode.EDIT, Mode.VIEW):
-            self.update_cursor()
+            self.update_cursor(tab)
 
     def handle_cmd(self, user_cmd):
         """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.
@@ -298,7 +322,8 @@ class Editor:
 
     def post_cursor_move(self):
         self.first_entry = True
-        self.update_cursor(tab=None)
+        tab = self.current_tab.layout()
+        self.move_viewport_for_cursor(tab)
         self.draw()
 
     def clear_chord(self):
