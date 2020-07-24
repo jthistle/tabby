@@ -14,5 +14,6 @@ class UndoInsertText(UndoAction):
         tab.children.insert(self.state.element, new_el)
 
     def undo(self, tab):
+        tab.cursor.move_away(1)
         del tab.children[self.state.element]
 

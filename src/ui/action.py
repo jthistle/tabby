@@ -40,6 +40,8 @@ class Action(Enum):
     CURSOR_MOVE_POSITION_BIG_LEFT = 36
     ADD_TEXT = 37
     REMOVE_TEXT = 38
+    ADD_BAR = 39
+    REMOVE_BAR = 40
 
 
 

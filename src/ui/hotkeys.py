@@ -47,6 +47,8 @@ ACTION_HOTKEY_MAP = [
     ActionHotkeyLink(Action.TEXT_DELETE, ["KEY_DC"], [Mode.EDIT], [ElementType.TEXT]),
     ActionHotkeyLink(Action.ADD_TEXT, ["T"], [Mode.VIEW]),
     ActionHotkeyLink(Action.REMOVE_TEXT, ["kDC5"], [Mode.VIEW], [ElementType.TEXT]),
+    ActionHotkeyLink(Action.ADD_BAR, ["B"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.REMOVE_BAR, ["kDC6"], [Mode.VIEW], [ElementType.CHORD]),
 ]
 
 

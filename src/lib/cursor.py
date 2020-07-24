@@ -47,6 +47,10 @@ class Cursor:
         assert self.on_chord
         return self.bar.chord_number(self.element)
 
+    @property
+    def root_el(self):
+        return self.bar if self.on_chord else self.element
+
     def move(self, direction):
         """- for left, + for right"""
         last_type = self.element.type
@@ -73,14 +77,22 @@ class Cursor:
             return
         self.move(-direction)
 
+    def move_away_big(self, direction):
+        """Try to move away bigly in a given direction, but move the other direction if this fails."""
+        init_el = self.root_el
+        self.move_big(direction)
+        if init_el != self.root_el:
+            return
+        self.move_big(-direction)
+
     def move_big(self, direction):
         """Moves around by the bar. -1 for left, +1 for right"""
         last = None
-        last_major = self.bar if self.on_chord else self.element
+        last_major = self.root_el
         while self.element != last:
             last = self.element
             self.move(direction)
-            new_major = self.bar if self.on_chord else self.element
+            new_major = self.root_el
             if new_major != last_major:
                 break
 

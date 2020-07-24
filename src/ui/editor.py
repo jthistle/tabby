@@ -26,6 +26,8 @@ from lib.undo.insert_text_character import UndoInsertTextCharacter
 from lib.undo.delete_char import UndoDeleteChar
 from lib.undo.insert_text import UndoInsertText
 from lib.undo.remove_text import UndoRemoveText
+from lib.undo.insert_bar import UndoInsertBar
+from lib.undo.remove_bar import UndoRemoveBar
 
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
@@ -210,6 +212,13 @@ class Editor:
             self.update()
         elif action == Action.REMOVE_TEXT:
             self.remove_text()
+        elif action == Action.ADD_BAR:
+            state = CursorStateGeneric(self.cursor)
+            self.do(UndoInsertBar(state))
+            self.cursor.element = self.current_tab.element(state.element).chord(0)
+            self.update()
+        elif action == Action.REMOVE_BAR:
+            self.remove_bar()
         else:
             self.console.echo("Unhandled action: {}, Modifier: {}".format(action, user_cmd.modifier))
 
@@ -219,6 +228,12 @@ class Editor:
         state = CursorStateText(self.cursor)
         text = self.cursor.element
         self.do(UndoRemoveText(state, text))
+        self.update()
+
+    def remove_bar(self):
+        state = CursorState(self.cursor)
+        bar = self.cursor.bar
+        self.do(UndoRemoveBar(state, bar))
         self.update()
 
     def paste(self):
@@ -283,6 +298,9 @@ class Editor:
         self.update()
 
     def remove_chord(self):
+        if self.cursor.bar.nchords == 1:
+            return
+
         state = CursorState(self.cursor)
         if not (self.cursor.bar_number == self.current_tab.nels - 1
                 and self.cursor.chord_number == self.cursor.bar.nchords - 1):
