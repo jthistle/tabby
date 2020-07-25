@@ -32,18 +32,24 @@ class LayoutFragment:
     def height(self):
         return len(self.lines)
 
-    def form_corrected(self, diff) -> 'LayoutFragment':
+    def pos(self, anchor_name):
+        for anchor in self.anchors:
+            if anchor.name == anchor_name:
+                return anchor.line
+        return None
+
+    def form_corrected(self, top_diff, bottom_diff) -> 'LayoutFragment':
         new_lines = []
         offset = 0
-        if diff < 0:
-            offset = -diff
-            for i in range(abs(diff)):
+        if top_diff < 0:
+            offset = -top_diff
+            for i in range(abs(top_diff)):
                 new_lines.append(" " * self.width)
 
         new_lines += self.lines
 
-        if diff > 0:
-            for i in range(abs(diff)):
+        if bottom_diff > 0:
+            for i in range(bottom_diff):
                 new_lines.append(" " * self.width)
 
         new_anchors = []
@@ -73,11 +79,10 @@ class LayoutFragment:
         if origin is None or target is None:
             return
 
-        diff = target.line - origin.line
-        new_origin = self.form_corrected(diff)
-
-        other_diff = (len(other.lines) - target.line) - (len(self.lines) - origin.line)
-        new_target = other.form_corrected(other_diff)
+        top_diff = origin.line - target.line
+        bottom_diff =  (len(other.lines) - target.line) - (len(self.lines) - origin.line)
+        new_origin = self.form_corrected(top_diff, bottom_diff)
+        new_target = other.form_corrected(-top_diff, -bottom_diff)
 
         return new_origin.merge_with(new_target)
 

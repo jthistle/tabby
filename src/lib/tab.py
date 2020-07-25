@@ -1,4 +1,5 @@
 
+from .layout import LayoutAnchorName
 from .element import ElementBase, ElementType
 from .bar import Bar
 from .tuning import Tuning
@@ -29,8 +30,6 @@ class Tab(ElementBase):
         self.cursor = Cursor(self)
         self.undo_stack = UndoStack(self)
         self.meta = TabMeta(API_VERSION, "Untitled")
-
-        self.children[0].chord(2).annotation = "S"  # TODO fix this
 
     def do(self, action):
         self.undo_stack.do(action)
@@ -220,17 +219,18 @@ class Tab(ElementBase):
                 if self.cursor.on_chord and child == self.cursor.bar:
                     cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.element)
                     horizontal = padding_left + cols
+                    vertical = bar_fragment.pos(LayoutAnchorName.HIGHEST_STRING)
                     if not system_start and current_bar_frag is not None:
                         horizontal += current_bar_frag.width
-                    cursor_highlight_start = [vertical_offset, horizontal]
-                    cursor_highlight_end = [vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
+                    cursor_highlight_start = [vertical + vertical_offset, horizontal]
+                    cursor_highlight_end = [vertical + vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
 
                     for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):
                         for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
                             cursor_highlight.append((y, x))
 
                     # Specific string highlighting
-                    bottom_line = vertical_offset + child.nstrings - 1
+                    bottom_line = vertical + vertical_offset + child.nstrings - 1
                     cursor_strong_highlight_start = [bottom_line - self.cursor.position, horizontal]
                     cursor_strong_highlight_end   = [bottom_line - self.cursor.position, horizontal + curs_width - 1]
 
