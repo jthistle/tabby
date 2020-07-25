@@ -1,4 +1,5 @@
 
+from .layout import LayoutAnchorName
 from .element import ElementBase, ElementType
 from .bar import Bar
 from .tuning import Tuning
@@ -141,6 +142,17 @@ class Tab(ElementBase):
             bar.set_tuning(new_tuning)
         self.cursor.string = len(strings) - 1
 
+    def end_system(self, bar_frag, lines, vertical_offset):
+        if bar_frag is None:
+            return
+        bar_lines = bar_frag.lines
+        for i in range(len(bar_lines)):
+            ind = i + vertical_offset
+            if ind > len(lines) - 1:
+                for j in range(ind - len(lines) + 1):
+                    lines.append("")
+            lines[ind] += bar_lines[i]
+
     def layout(self) -> LayoutResult:
         current_width = 0                   # the width of the current working system
         system_start = True                 # whether we're at a system start or not
@@ -156,12 +168,15 @@ class Tab(ElementBase):
 
         lines = ["" * padding_top]
         vertical_offset = 0 + padding_top   # how far 'down' we are currently
+        current_bar_frag = None
 
         prev_element = None
         for child in self.children:
             if child.is_text:
                 if prev_element and prev_element.is_bar:
-                    vertical_offset += prev_element.get_height()
+                    self.end_system(current_bar_frag, lines, vertical_offset)
+                    vertical_offset += current_bar_frag.height
+                    current_bar_frag = None
 
                 lines.append("")
                 has_cursor = self.cursor.on_text and child == self.cursor.element
@@ -190,29 +205,32 @@ class Tab(ElementBase):
                 width = child.get_width(system_start)
                 if current_width + width > self.max_width and not system_start:
                     current_width = width
-                    vertical_offset += child.get_height() + bar_padding_bottom
+                    self.end_system(current_bar_frag, lines, vertical_offset)
+                    vertical_offset += current_bar_frag.height + bar_padding_bottom
+                    current_bar_frag = None
                     system_start = True
                 else:
                     current_width += width
 
                 # Layout bar
-                bar_lines = child.layout(system_start)
+                bar_fragment = child.layout(system_start)
 
                 # Decide where to put the cursor
                 if self.cursor.on_chord and child == self.cursor.bar:
                     cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.element)
                     horizontal = padding_left + cols
-                    if not system_start:
-                        horizontal += len(lines[vertical_offset])
-                    cursor_highlight_start = [vertical_offset, horizontal]
-                    cursor_highlight_end = [vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
+                    vertical = bar_fragment.pos(LayoutAnchorName.HIGHEST_STRING)
+                    if not system_start and current_bar_frag is not None:
+                        horizontal += current_bar_frag.width
+                    cursor_highlight_start = [vertical + vertical_offset, horizontal]
+                    cursor_highlight_end = [vertical + vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
 
                     for y in range(cursor_highlight_start[0], cursor_highlight_end[0] + 1):
                         for x in range(cursor_highlight_start[1], cursor_highlight_end[1] + 1):
                             cursor_highlight.append((y, x))
 
                     # Specific string highlighting
-                    bottom_line = vertical_offset + child.nstrings - 1
+                    bottom_line = vertical + vertical_offset + child.nstrings - 1
                     cursor_strong_highlight_start = [bottom_line - self.cursor.position, horizontal]
                     cursor_strong_highlight_end   = [bottom_line - self.cursor.position, horizontal + curs_width - 1]
 
@@ -220,17 +238,17 @@ class Tab(ElementBase):
                         for x in range(cursor_strong_highlight_start[1], cursor_strong_highlight_end[1] + 1):
                             cursor_highlight_strong.append((y, x))
 
-                for i in range(len(bar_lines)):
-                    ind = i + vertical_offset
-                    if ind > len(lines) - 1:
-                        for j in range(ind - len(lines) + 1):
-                            lines.append("")
-                    lines[ind] += bar_lines[i]
+                if current_bar_frag is None:
+                    current_bar_frag = bar_fragment
+                else:
+                    current_bar_frag = current_bar_frag.match_with(bar_fragment)
 
                 system_start = False
                 current_bar_num += 1
 
             prev_element = child
+
+        self.end_system(current_bar_frag, lines, vertical_offset)
 
         txt = "\n".join([" " * padding_left + x for x in lines])
         return LayoutResult(txt, cursor_highlight, cursor_highlight_strong)
