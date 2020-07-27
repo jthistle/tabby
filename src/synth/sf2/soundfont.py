@@ -1,13 +1,24 @@
 
 from util.logger import logger
 
-from .exceptions import SoundfontException, SoundfontReadException
+import synth.sf2.decode as decode
+from .exceptions import SoundfontException, SoundfontReadException, SoundfontIncompatibleVersion
 from .riff_reader import RiffReader
 from .sample import Sample
 from .instrument import Instrument
 from .bag import Bag
 from .generator import Generator
 from .modulator import Modulator
+from .preset import Preset
+
+
+def records(hydra, ident, size, ignore_terminating = False):
+    data = hydra.child(ident).data
+    if len(data) % size != 0:
+        raise SoundfontReadException("'{}' sub-chunk is invalid length ({})".format(ident, len(data)))
+
+    for i in range(len(data) // size - (1 if ignore_terminating else 0)):
+        yield data[i * size:(i + 1) * size]
 
 
 class Soundfont:
@@ -18,10 +29,15 @@ class Soundfont:
         self.bags = []
         self.generators = []
         self.modulators = []
+        self.presets = []
+        self.preset_bags = []
+        self.preset_gens = []
+        self.preset_mods = []
         try:
             self.chunk = self.reader.read()
-            print(self.chunk)
+            # print(self.chunk)
 
+            self.get_metadata()
             self.raw_samples = self.chunk.child("sdta").child("smpl").data
             self.interpret_hydra()
         except SoundfontException as e:
@@ -30,73 +46,126 @@ class Soundfont:
             print(msg)
             raise e
 
+    def get_metadata(self):
+        self.name = decode.ascii_str(self.chunk.child("INFO").child("INAM").data)
+
+        version_data = self.chunk.child("INFO").child("ifil").data
+        major = decode.WORD(version_data[:2])
+        minor = decode.WORD(version_data[2:4])
+        self.version = "{}.{:02d}".format(major, minor)
+
+        if not (major == 2 and minor <= 1):
+            return SoundfontIncompatibleVersion("Soundfont version {} is not supported by this synth".format(self.version))
+
+
+    def bake_bags(self):
+        """
+        Since bags and instruments use ids that end at the id of the next bag/instrument,
+        we need to wait until we've read all of them before we can assign references to generators
+        or modulators.
+        """
+        for i in range(len(self.bags) - 1):
+            current = self.bags[i]
+            nxt = self.bags[i + 1]
+            current.gens = self.generators[current.gen_ndx:nxt.gen_ndx]
+            current.mods = self.modulators[current.mod_ndx:nxt.mod_ndx]
+
     def bake_instruments(self):
         for i in range(len(self.instruments) - 1):
             current = self.instruments[i]
             nxt = self.instruments[i + 1]
             current.bags = self.bags[current.bag_ndx:nxt.bag_ndx]
 
+    def bake_preset_bags(self):
+        for i in range(len(self.preset_bags) - 1):
+            current = self.preset_bags[i]
+            nxt = self.preset_bags[i + 1]
+            current.gens = self.preset_gens[current.gen_ndx:nxt.gen_ndx]
+            current.mods = self.preset_mods[current.mod_ndx:nxt.mod_ndx]
+
+    def bake_presets(self):
+        for i in range(len(self.presets) - 1):
+            current = self.presets[i]
+            nxt = self.presets[i + 1]
+            current.bags = self.preset_bags[current.bag_ndx:nxt.bag_ndx]
+
     def interpret_hydra(self):
         hydra = self.chunk.child("pdta")
 
         # Samples
-        sample_data = hydra.child("shdr").data
-        if len(sample_data) % 46 != 0:
-            raise SoundfontReadException("SHDR sub-chunk is invalid length")
-
-        for i in range(len(sample_data) // 46):
-            smpl = sample_data[i * 46:(i + 1) * 46]
+        for smpl in records(hydra, "shdr", 46):
             new_samp = Sample.from_raw(smpl, self.raw_samples)
             if new_samp is not None:
                 self.samples.append(new_samp)
 
         # Instrument zone generators
-        gen_data = hydra.child("igen").data
-        if len(gen_data) % 4 != 0:
-            raise SoundfontReadException("IGEN sub-chunk is invalid length")
-
-        for i in range(len(gen_data) // 4):
-            gen = gen_data[i * 4:(i + 1) * 4]
+        for gen in records(hydra, "igen", 4, ignore_terminating=True):
             new_gen = Generator.from_raw(gen)
             if new_gen is not None:
                 self.generators.append(new_gen)
 
         # Instrument zone modulators
-        mod_data = hydra.child("imod").data
-        if len(mod_data) % 10 != 0:
-            raise SoundfontReadException("IMOD sub-chunk is invalid length")
-
-        # -1 to ignore terminating record
-        for i in range(len(mod_data) // 10 - 1):
-            mod = mod_data[i * 10:(i + 1) * 10]
+        for mod in records(hydra, "imod", 10, ignore_terminating=True):
             new_mod = Modulator.from_raw(mod)
             if new_mod is not None:
                 self.modulators.append(new_mod)
 
         # Bags (instrument zones)
-        bag_data = hydra.child("ibag").data
-        if len(bag_data) % 4 != 0:
-            raise SoundfontReadException("IBAG sub-chunk is invalid length")
-
-        # Again, -1 to ignore terminating record
-        for i in range(len(bag_data) // 4 - 1):
-            bag = bag_data[i * 4:(i + 1) * 4]
-            new_bag = Bag.from_raw(bag, self.generators, self.modulators)
+        for bag in records(hydra, "ibag", 4):
+            new_bag = Bag.from_raw(bag, False)
             if new_bag is not None:
                 self.bags.append(new_bag)
 
-        # Instruments
-        inst_data = hydra.child("inst").data
-        if len(inst_data) % 22 != 0:
-            raise SoundfontReadException("INST sub-chunk is invalid length")
+        self.bake_bags()
 
-        for i in range(len(inst_data) // 22):
-            inst = inst_data[i * 22:(i + 1) * 22]
+        # Instruments
+        for inst in records(hydra, "inst", 22):
             new_inst = Instrument.from_raw(inst)
             if new_inst is not None:
                 self.instruments.append(new_inst)
 
         self.bake_instruments()
 
-        for inst in self.instruments:
-            print(inst)
+        # Now onto Pxxx headers
+        # Preset zone generators
+        for gen in records(hydra, "pgen", 4, ignore_terminating=True):
+            new_gen = Generator.from_raw(gen)
+            if new_gen is not None:
+                self.preset_gens.append(new_gen)
+
+        # Preset zone modulators
+        for mod in records(hydra, "pmod", 10, ignore_terminating=True):
+            new_mod = Modulator.from_raw(mod)
+            if new_mod is not None:
+                self.preset_mods.append(new_mod)
+
+        # Preset bags
+        for pbag in records(hydra, "pbag", 4):
+            new_pbag = Bag.from_raw(pbag, True)
+            if new_pbag is not None:
+                self.preset_bags.append(new_pbag)
+
+        self.bake_preset_bags()
+
+        # Presets
+        for preset in records(hydra, "phdr", 38):
+            new_preset = Preset.from_raw(preset)
+            if new_preset is not None:
+                self.presets.append(new_preset)
+
+        self.bake_presets()
+
+    def __str__(self):
+        return """Soundfont '{}' on version {}.
+- {} samples
+- {} instruments
+- {} instrument generators
+- {} instrument modulators
+- {} instrument zones
+- {} presets
+- {} preset generators
+- {} preset modulators
+- {} preset zones""".format(
+            self.name, self.version, len(self.samples), len(self.instruments), len(self.generators), len(self.modulators), len(self.bags),
+            len(self.presets), len(self.preset_gens), len(self.preset_mods), len(self.preset_bags)
+        )

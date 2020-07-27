@@ -2,13 +2,17 @@
 from util.logger import logger
 
 import synth.sf2.decode as decode
-from .definitions import SFGenerator
+from .definitions import SFGenerator, genAmountType, rangesType, get_gen_amount_type
 
 
 class Generator:
     def __init__(self, operation, amount):
         self.operation = operation
         self.amount = amount
+
+    def instrument(self, instruments):
+        assert self.operation == SFGenerator.instrument
+        return instruments[self.amount]
 
     def sample(self, samples_list):
         assert self.operation == SFGenerator.sampleID
@@ -24,10 +28,15 @@ class Generator:
             logger.warn("Ignoring undefined generator id {}".format(gen_id))
             return None
 
-        # Assuming all generators use signed short values may be wrong.
-        # However, the spec doesn't provide any guidance as to which generators use
-        # what type, so lets hope it's right.
-        amount = decode.SHORT(inst[2:4])
+        amount = None
+        amount_type = get_gen_amount_type(gen_oper)
+        if amount_type == genAmountType.SHORT:
+            amount = decode.SHORT(inst[2:4])
+        elif amount_type == genAmountType.rangesType:
+            raw_val = decode.WORD(inst[2:4])
+            amount = rangesType(raw_val)
+        elif amount_type == genAmountType.WORD:
+            amount = decode.WORD(inst[2:4])
 
         return cls(gen_oper, amount)
 

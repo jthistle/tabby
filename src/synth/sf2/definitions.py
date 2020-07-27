@@ -52,6 +52,7 @@ class SFGenerator(Enum):
     releaseVolEnv = 38
     keynumToVolEnvHold = 39
     keynumToVolEnvDecay = 40
+    instrument = 41
     keyRange = 43
     velRange = 44
     startloopAddrsCoarseOffset = 45
@@ -66,6 +67,40 @@ class SFGenerator(Enum):
     scaleTuning = 56
     exclusiveClass = 57
     overridingRootKey = 58
+
+
+# Soundfont 2.01 spec, 7.5
+class genAmountType(Enum):
+    rangesType = 1
+    SHORT = 2
+    WORD = 3
+
+
+class rangesType:
+    def __init__(self, val: int):
+        self.byLo = val & 0b11111111
+        self.byHi = val >> 8
+
+    def __str__(self):
+        return "rangesType: lo {} hi {}".format(self.byLo, self.byHi)
+
+# Soundfont 2.01 spec, 8.1.3
+# Assume SHORT if not listed
+GEN_AMOUNT_TYPE_MAP = {
+    genAmountType.rangesType: [
+        SFGenerator.keyRange,
+        SFGenerator.velRange,
+    ],
+    # I don't think any of these exist. It's really hard to tell from what
+    # the spec says, due to its ambiguity.
+    genAmountType.WORD: []
+}
+
+def get_gen_amount_type(generator):
+    for tp in GEN_AMOUNT_TYPE_MAP:
+        if generator in GEN_AMOUNT_TYPE_MAP[tp]:
+            return tp
+    return genAmountType.SHORT
 
 
 class SFModPolarity(Enum):

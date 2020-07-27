@@ -44,7 +44,12 @@ class Sample:
 
         return cls(name, data, loop, sample_rate, by_original_pitch, pitch_correction, sample_type, sample_link)
 
+    @property
+    def num_samples(self):
+        # Works for mono... TODO stereo?
+        return len(self.data) // 2
+
     def __str__(self):
-        return "Sample '{}' of length {}, looping ({},{}), fs {}Hz, pitch {} ({:+d}), type {}".format(
-            self.name, len(self.data) // 2, *self.loop, self.sample_rate, self.pitch, self.pitch_correction, self.type
+        return "Sample '{}' of length {:.2f}s ({} samples), looping ({},{}), fs {}Hz, pitch {} ({:+d}), type {}".format(
+            self.name, self.num_samples / self.sample_rate, self.num_samples, *self.loop, self.sample_rate, self.pitch, self.pitch_correction, self.type
         )

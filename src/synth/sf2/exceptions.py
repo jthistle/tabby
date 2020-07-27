@@ -14,3 +14,8 @@ class RiffReadException(SoundfontException):
 class SoundfontReadException(SoundfontException):
     def __init__(self, *args):
         super().__init__(*args)
+
+
+class SoundfontIncompatibleVersion(SoundfontException):
+    def __init__(self, *args):
+        super().__init__(*args)

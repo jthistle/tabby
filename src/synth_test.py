@@ -1,12 +1,12 @@
 
 """
-A script for (manually) testing the synthesizer module.
+A script for (manually) testing the basic synthesizer module.
 
 Try it out! `python3 ./src/synth_test.py`
 """
 
 import time
-from synth.synthesizer import Synthesizer
+from synth.basic.synthesizer import Synthesizer
 from lib.notenames import name_to_val
 
 synth = Synthesizer()
