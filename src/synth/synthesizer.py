@@ -1,6 +1,6 @@
 
 from .sf2.soundfont import Soundfont
-from .audio_interface import AudioInterface
+from .interface import AudioInterface
 
 class Synthesizer:
     sfont = None
