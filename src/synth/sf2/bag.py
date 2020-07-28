@@ -29,6 +29,16 @@ class Bag:
         else:
             return self.gens[-1].operation != SFGenerator.sampleID
 
+    def instrument(self, instruments):
+        assert self.is_preset and not self.is_global
+        inst_gen = self.gens[-1]
+        return inst_gen.instrument(instruments)
+
+    def sample(self, samples):
+        assert not self.is_preset and not self.is_global
+        sample_gen = self.gens[-1]
+        return sample_gen.sample(samples)
+
     def __str__(self):
         if self.gens == None and self.mods == None:
             return "Bag, gen id {}, mod id {}".format(
