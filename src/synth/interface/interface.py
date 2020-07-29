@@ -45,6 +45,18 @@ class AudioInterface:
         self.alsa_thread.start()
         self.read_buffers_thread.start()
 
+    def __do_extend(self, start_point, buf_id, buffer, buf_size, channel_ratio):
+        chunk_size = self.init_buffer_samples * 2
+        while start_point < buf_size:
+            xtnd = 0
+            for i in range(start_point, min(start_point + chunk_size, buf_size)):
+                for j in range(channel_ratio):
+                    self.raw_buffers[buf_id].append(buffer[i])
+                    xtnd += 1
+            self.playback_pipe.send((MessageType.EXTEND_BUFFER, (buf_id, xtnd)))
+            start_point += chunk_size
+
+
     def play(self, buffer, channels = 2):
         # buffer should be given as a list of frames where possible
         if type(buffer) == bytes:
@@ -73,15 +85,21 @@ class AudioInterface:
 
         # Now the buffer has been added to the playback processor, we can start extending it
         # with chunks while the first bit of it is playing back. Hopefully we can outpace it.
-        chunk_size = self.init_buffer_samples * 2
-        while start_point < buf_size:
-            for i in range(start_point, min(start_point + chunk_size, buf_size)):
-                for j in range(channel_ratio):
-                    self.raw_buffers[self.last].append(buffer[i])
-            self.playback_pipe.send((MessageType.EXTEND_BUFFER, (self.last, len(new_data))))
-            start_point += chunk_size
+        self.__do_extend(start_point, self.last, buffer, buf_size, channel_ratio)
 
         return self.last
+
+    def extend(self, buffer_id, buffer, channels = 2):
+        # buffer should be given as a list of frames where possible
+        if type(buffer) == bytes:
+            buffer = struct.unpack("<h", buffer)
+
+        buf_size = len(buffer)
+        channel_ratio = self.cfg.channels // channels
+
+        self.__do_extend(0, buffer_id, buffer, buf_size, channel_ratio)
+
+        return buffer_id
 
     def start_read_buffers_thread(self):
         while True:
