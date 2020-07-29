@@ -10,14 +10,17 @@ from util.logger import logger
 from .processor import run_processor
 from .alsa import run_alsa
 from .buffer import AudioBuffer
+from .message import MessageType
 
 
 class AudioInterface:
-    def __init__(self, config, max_latency=0.2):
+    def __init__(self, config, target_latency=0.02, max_latency=0.2):
         # Format by default is signed 16-bit LE
         self.cfg = config
         self.frame_size = 2     # bytes
 
+        self.target_latency = target_latency
+        self.init_buffer_samples = int(self.cfg.sample_rate * self.target_latency)
         self.max_latency = max_latency
 
         self.buffer_pipes_mutex = Lock()
@@ -48,10 +51,12 @@ class AudioInterface:
             buffer = struct.unpack("<h", buffer)
 
         buf_size = len(buffer)
+        start_point = min(self.init_buffer_samples, buf_size)
         channel_ratio = self.cfg.channels // channels
 
+        # We create an initial buffer up to a start point determined by the target latency
         new_data = []
-        for i in range(buf_size):
+        for i in range(start_point):
             for j in range(channel_ratio):
                 new_data.append(buffer[i])
 
@@ -64,7 +69,19 @@ class AudioInterface:
         self.buffer_pipes.append(my_end)
         self.buffer_pipes_mutex.release()
 
-        self.playback_pipe.send(buf)
+        self.playback_pipe.send((MessageType.NEW_BUFFER, buf))
+
+        # Now the buffer has been added to the playback processor, we can start extending it
+        # with chunks while the first bit of it is playing back. Hopefully we can outpace it.
+        chunk_size = self.init_buffer_samples * 2
+        while start_point < buf_size:
+            for i in range(start_point, min(start_point + chunk_size, buf_size)):
+                for j in range(channel_ratio):
+                    self.raw_buffers[self.last].append(buffer[i])
+            self.playback_pipe.send((MessageType.EXTEND_BUFFER, (self.last, len(new_data))))
+            start_point += chunk_size
+
+        return self.last
 
     def start_read_buffers_thread(self):
         while True:
