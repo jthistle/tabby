@@ -29,6 +29,8 @@ class AudioInterface:
         self.raw_buffers_mutex = Lock()
         self.last = 0
 
+        self.do_halt = False
+
         # Playback process
         # Queue size = max latency / length of period
         queue_size = int(self.max_latency / self.cfg.period_length)
@@ -117,6 +119,8 @@ class AudioInterface:
     def start_read_buffers_thread(self):
         backlog = []
         while True:
+            if self.do_halt:
+                break
             req = None
             if len(backlog) == 0:
                 self.playback_pipe.poll(timeout=None)
@@ -141,3 +145,11 @@ class AudioInterface:
                 else:
                     del self.raw_buffers[payload]
                     self.raw_buffers_mutex.release()
+
+    def halt(self):
+        self.do_halt = True
+        self.playback_thread.kill()
+        self.alsa_thread.kill()
+        self.read_buffers_thread.join()
+
+        del self.raw_buffers
