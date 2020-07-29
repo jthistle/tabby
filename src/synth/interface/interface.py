@@ -68,7 +68,7 @@ class AudioInterface:
             buffer = struct.unpack("<h", buffer)
 
         buf_size = len(buffer)
-        start_point = buf_size if self.use_buffering <= 0 else min(self.init_buffer_samples, buf_size)
+        start_point = buf_size if not self.use_buffering else min(self.init_buffer_samples, buf_size)
         channel_ratio = self.cfg.channels // channels
 
         # We create an initial buffer up to a start point determined by the target latency
@@ -109,12 +109,26 @@ class AudioInterface:
 
     def start_read_buffers_thread(self):
         while True:
-            self.buffer_pipes_mutex.acquire()
-            for pipe in self.buffer_pipes:
-                if not pipe.poll():
-                    continue
+            # self.buffer_pipes_mutex.acquire()
+            # for pipe in self.buffer_pipes:
+            #     if not pipe.poll():
+            #         continue
 
-                buf_id, offset, size = pipe.recv()
-                pipe.send(self.raw_buffers[buf_id][offset:offset + size])
+            #     st = time.time()
+            #     buf_id, offset, size = pipe.recv()
+            #     rcv = time.time()
+            #     pipe.send(self.raw_buffers[buf_id][offset:offset + size])
+            #     snd = time.time()
+            #     if snd - st > 0.000900:
+            #         logger.debug("{} took too long: {:.6f} ({:.6f}, {:.6f})".format(buf_id, snd - st, rcv - st, snd - rcv))
 
-            self.buffer_pipes_mutex.release()
+            self.playback_pipe.poll(timeout=None)
+            reqs = self.playback_pipe.recv()
+
+            resp = {}
+            for buf_id, offset, size in reqs:
+                resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
+
+            self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
+
+            # self.buffer_pipes_mutex.release()

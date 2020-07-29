@@ -26,18 +26,18 @@ def read_wav(file):
     return data_to_samples(data)
 
 waves = [
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[:44100],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[:44100 * 2],
     # read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[44100:44100*4],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/G3.wav")[:44100],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E4.wav")[:44100],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E5.wav")[:44100],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/G3.wav")[:44100 * 2],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E4.wav")[:44100 * 2],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E5.wav")[:44100 * 2],
 ]
 
 print("playing")
-for w in waves:
+for w in waves * 2:
     print("x")
     b = inter.play(w, channels=1)
-    time.sleep(0.1)
+    time.sleep(0.4)
 
 # b = inter.play(waves[0], channels=1)
 # inter.extend(b, waves[1], channels=1)

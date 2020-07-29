@@ -14,14 +14,10 @@ class AudioProcessor:
         self.period_size = period_size
         self.interface_pipe = interface_pipe
         self.alsa_data_queue = alsa_data_queue
-        self.buffers = []
+        self.buffers = {}
         self.volume = 1
 
-    def buf_by_id(self, buf_id):
-        for buf in self.buffers:
-            if buf.id == buf_id:
-                return buf
-        return None
+        self.waiting_for_response = False
 
     def read_buffers(self):
         """
@@ -29,20 +25,54 @@ class AudioProcessor:
             for NEW_BUFFER:  buffer object
             for EXTEND_BUFFER:  (buffer id, size change)
             for REMOVE_BUFFER:  not implemented
+            for REQUEST_REPONSES: { buffer id: buffer data }
         """
         while self.interface_pipe.poll():
             msg_type, payload = self.interface_pipe.recv()
             if msg_type == MessageType.NEW_BUFFER:
-                self.buffers.append(payload)
+                self.buffers[payload.id] = payload
             elif msg_type == MessageType.EXTEND_BUFFER:
-                self.buf_by_id(payload[0]).size += payload[1]
+                self.buffers[payload[0]].size += payload[1]
+            elif msg_type == MessageType.REQUEST_REPONSES:
+                self.process_responses(payload)
 
     def correct_val(self, val):
         return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))
 
+    def process_responses(self, responses):
+        ## DEBUG
+        inner_begin_time = time.time()
+        times = [inner_begin_time]
+        ## END DEBUG
+
+        data = [0] * self.period_size
+        for buf_id in responses:
+            i = 0
+            for part in self.buffers[buf_id].read(responses[buf_id]):
+                data[i] += part
+                i += 1
+
+            times.append(time.time())   ## DEBUG
+
+        ## DEBUG
+        if time.time() - inner_begin_time >= 0.001000:
+            logger.debug("bollocks: {:.6f}".format(time.time() - inner_begin_time))
+            for i in range(len(times) - 1):
+                logger.debug("- {} took {:.6f}".format(i, times[i + 1] - times[i]))
+        ## END DEBUG
+
+        data = [self.correct_val(x) for x in data]
+        self.alsa_data_queue.put(struct.pack(
+                "<{}h".format(self.period_size),
+                *data
+            )
+        )
+
+        self.waiting_for_response = False
+
     def run(self):
         begin_time = time.time()
-        i = 0
+        # i = 0
         while True:
             self.read_buffers()
 
@@ -50,39 +80,24 @@ class AudioProcessor:
                 time.sleep(0.001)
                 continue
 
-            inner_begin_time = time.time()
-            times = []
-            data = [0] * self.period_size
-            for buffer in self.buffers:
+            if self.waiting_for_response:
+                continue
+
+            requests = []
+            for buffer in self.buffers.values():
                 if buffer.finished:
                     continue
 
-                i = 0
-                buf_period = buffer.read(self.period_size)
-                for part in buf_period:
-                    data[i] += part
-                    i += 1
-                times.append(time.time())
+                requests.append(buffer.get_request(self.period_size))
 
-            if time.time() - inner_begin_time >= 0.001000:
-                times.insert(0, inner_begin_time)
-                logger.debug("bollocks: {:.6f}".format(time.time() - inner_begin_time))
-                for i in range(len(times) - 1):
-                    logger.debug("- {} took {:.6f}".format(i, times[i + 1] - times[i]))
+            self.interface_pipe.send(requests)
+            self.waiting_for_response = True
 
-            data = [self.correct_val(x) for x in data]
-            self.alsa_data_queue.put(struct.pack(
-                    "<{}h".format(self.period_size),
-                    *data
-                )
-            )
-
-
-            i += 1
-            if i >= 100:
-                logger.debug("Took {:.6f}s over {} periods".format((time.time() - begin_time) / i, i))
-                i = 0
-                begin_time = time.time()
+            # i += 1
+            # if i >= 100:
+            #     logger.debug("Took {:.6f}s over {} periods".format((time.time() - begin_time) / i, i))
+            #     i = 0
+            #     begin_time = time.time()
 
 def run_processor(*args):
     processor = AudioProcessor(*args)
