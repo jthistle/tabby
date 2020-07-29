@@ -42,6 +42,7 @@ class AudioProcessor:
 
     def run(self):
         begin_time = time.time()
+        i = 0
         while True:
             self.read_buffers()
 
@@ -49,6 +50,8 @@ class AudioProcessor:
                 time.sleep(0.001)
                 continue
 
+            inner_begin_time = time.time()
+            times = []
             data = [0] * self.period_size
             for buffer in self.buffers:
                 if buffer.finished:
@@ -59,6 +62,13 @@ class AudioProcessor:
                 for part in buf_period:
                     data[i] += part
                     i += 1
+                times.append(time.time())
+
+            if time.time() - inner_begin_time >= 0.001000:
+                times.insert(0, inner_begin_time)
+                logger.debug("bollocks: {:.6f}".format(time.time() - inner_begin_time))
+                for i in range(len(times) - 1):
+                    logger.debug("- {} took {:.6f}".format(i, times[i + 1] - times[i]))
 
             data = [self.correct_val(x) for x in data]
             self.alsa_data_queue.put(struct.pack(
@@ -66,6 +76,13 @@ class AudioProcessor:
                     *data
                 )
             )
+
+
+            i += 1
+            if i >= 100:
+                logger.debug("Took {:.6f}s over {} periods".format((time.time() - begin_time) / i, i))
+                i = 0
+                begin_time = time.time()
 
 def run_processor(*args):
     processor = AudioProcessor(*args)

@@ -18,7 +18,7 @@ from util.logger import logger
 
 cfg = AudioConfig()
 latency = 0.1
-inter = AudioInterface(cfg, target_latency=0.01, max_latency=latency)
+inter = AudioInterface(cfg, max_latency=latency)
 
 def read_wav(file):
     wave_obj = wave.open(file, "rb")
@@ -27,14 +27,17 @@ def read_wav(file):
 
 waves = [
     read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[:44100],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[44100:44100*4],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/G3.wav")[:44100*2],
-    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E4.wav")[:44100*2],
+    # read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/C3.wav")[44100:44100*4],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/G3.wav")[:44100],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E4.wav")[:44100],
+    read_wav("/home/james/Python/tabby/src/synth/samples/electric_clean/E5.wav")[:44100],
 ]
 
 print("playing")
-# for w in waves:
-#     b = inter.play(w, channels=1)
+for w in waves:
+    print("x")
+    b = inter.play(w, channels=1)
+    time.sleep(0.1)
 
-b = inter.play(waves[0], channels=1)
-inter.extend(b, waves[1], channels=1)
+# b = inter.play(waves[0], channels=1)
+# inter.extend(b, waves[1], channels=1)

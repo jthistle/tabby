@@ -14,12 +14,13 @@ from .message import MessageType
 
 
 class AudioInterface:
-    def __init__(self, config, target_latency=0.02, max_latency=0.2):
+    def __init__(self, config, max_latency=0.2, use_buffering=False):
         # Format by default is signed 16-bit LE
         self.cfg = config
         self.frame_size = 2     # bytes
 
-        self.target_latency = target_latency
+        self.use_buffering = use_buffering
+        self.target_latency = 0.01      # only valid with use_buffering = True
         self.init_buffer_samples = int(self.cfg.sample_rate * self.target_latency)
         self.max_latency = max_latency
 
@@ -45,6 +46,10 @@ class AudioInterface:
         self.alsa_thread.start()
         self.read_buffers_thread.start()
 
+        blank = [0] * self.cfg.sample_rate
+        self.play(blank, 1)
+        time.sleep(1)
+
     def __do_extend(self, start_point, buf_id, buffer, buf_size, channel_ratio):
         chunk_size = self.init_buffer_samples * 2
         while start_point < buf_size:
@@ -63,7 +68,7 @@ class AudioInterface:
             buffer = struct.unpack("<h", buffer)
 
         buf_size = len(buffer)
-        start_point = min(self.init_buffer_samples, buf_size)
+        start_point = buf_size if self.use_buffering <= 0 else min(self.init_buffer_samples, buf_size)
         channel_ratio = self.cfg.channels // channels
 
         # We create an initial buffer up to a start point determined by the target latency
@@ -85,7 +90,8 @@ class AudioInterface:
 
         # Now the buffer has been added to the playback processor, we can start extending it
         # with chunks while the first bit of it is playing back. Hopefully we can outpace it.
-        self.__do_extend(start_point, self.last, buffer, buf_size, channel_ratio)
+        if self.use_buffering:
+            self.__do_extend(start_point, self.last, buffer, buf_size, channel_ratio)
 
         return self.last
 
