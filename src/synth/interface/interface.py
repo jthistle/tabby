@@ -24,7 +24,6 @@ class AudioInterface:
         self.init_buffer_samples = int(self.cfg.sample_rate * self.target_latency)
         self.max_latency = max_latency
 
-        self.buffer_pipes_mutex = Lock()
         self.buffer_pipes = []
         self.raw_buffers = {}
         self.last = 0
@@ -46,6 +45,7 @@ class AudioInterface:
         self.alsa_thread.start()
         self.read_buffers_thread.start()
 
+        # Run some zeros through the system to prevent underruns on initial playback
         blank = [0] * self.cfg.sample_rate
         self.play(blank, 1)
         time.sleep(1)
@@ -60,7 +60,6 @@ class AudioInterface:
                     xtnd += 1
             self.playback_pipe.send((MessageType.EXTEND_BUFFER, (buf_id, xtnd)))
             start_point += chunk_size
-
 
     def play(self, buffer, channels = 2):
         # buffer should be given as a list of frames where possible
@@ -78,14 +77,8 @@ class AudioInterface:
                 new_data.append(buffer[i])
 
         self.last += 1
-        my_end, client_end = Pipe()
-        buf = AudioBuffer(self.last, len(new_data), client_end)
+        buf = AudioBuffer(self.last, len(new_data))
         self.raw_buffers[self.last] = new_data
-
-        self.buffer_pipes_mutex.acquire()
-        self.buffer_pipes.append(my_end)
-        self.buffer_pipes_mutex.release()
-
         self.playback_pipe.send((MessageType.NEW_BUFFER, buf))
 
         # Now the buffer has been added to the playback processor, we can start extending it
@@ -109,19 +102,6 @@ class AudioInterface:
 
     def start_read_buffers_thread(self):
         while True:
-            # self.buffer_pipes_mutex.acquire()
-            # for pipe in self.buffer_pipes:
-            #     if not pipe.poll():
-            #         continue
-
-            #     st = time.time()
-            #     buf_id, offset, size = pipe.recv()
-            #     rcv = time.time()
-            #     pipe.send(self.raw_buffers[buf_id][offset:offset + size])
-            #     snd = time.time()
-            #     if snd - st > 0.000900:
-            #         logger.debug("{} took too long: {:.6f} ({:.6f}, {:.6f})".format(buf_id, snd - st, rcv - st, snd - rcv))
-
             self.playback_pipe.poll(timeout=None)
             reqs = self.playback_pipe.recv()
 
@@ -130,5 +110,3 @@ class AudioInterface:
                 resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
 
             self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
-
-            # self.buffer_pipes_mutex.release()

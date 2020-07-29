@@ -40,26 +40,12 @@ class AudioProcessor:
         return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))
 
     def process_responses(self, responses):
-        ## DEBUG
-        inner_begin_time = time.time()
-        times = [inner_begin_time]
-        ## END DEBUG
-
         data = [0] * self.period_size
         for buf_id in responses:
             i = 0
             for part in self.buffers[buf_id].read(responses[buf_id]):
                 data[i] += part
                 i += 1
-
-            times.append(time.time())   ## DEBUG
-
-        ## DEBUG
-        if time.time() - inner_begin_time >= 0.001000:
-            logger.debug("bollocks: {:.6f}".format(time.time() - inner_begin_time))
-            for i in range(len(times) - 1):
-                logger.debug("- {} took {:.6f}".format(i, times[i + 1] - times[i]))
-        ## END DEBUG
 
         data = [self.correct_val(x) for x in data]
         self.alsa_data_queue.put(struct.pack(
@@ -72,7 +58,6 @@ class AudioProcessor:
 
     def run(self):
         begin_time = time.time()
-        # i = 0
         while True:
             self.read_buffers()
 
@@ -92,12 +77,6 @@ class AudioProcessor:
 
             self.interface_pipe.send(requests)
             self.waiting_for_response = True
-
-            # i += 1
-            # if i >= 100:
-            #     logger.debug("Took {:.6f}s over {} periods".format((time.time() - begin_time) / i, i))
-            #     i = 0
-            #     begin_time = time.time()
 
 def run_processor(*args):
     processor = AudioProcessor(*args)
