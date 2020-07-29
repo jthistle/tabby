@@ -26,6 +26,7 @@ class AudioInterface:
 
         self.buffer_pipes = []
         self.raw_buffers = {}
+        self.raw_buffers_mutex = Lock()
         self.last = 0
 
         # Playback process
@@ -61,7 +62,16 @@ class AudioInterface:
             self.playback_pipe.send((MessageType.EXTEND_BUFFER, (buf_id, xtnd)))
             start_point += chunk_size
 
-    def play(self, buffer, channels = 2):
+    def play(self, buffer, channels = 2, immortal = False):
+        """
+        Play a buffer, which should be given as a list of frames. bytes-like objects
+        are also accepted. channels specifies the number of channels of the buffer to
+        be played, and must be a power of two and >= 1, and must be <= the audio config
+        number of channels for this interface. If `immortal` is specified, the buffer
+        will not be deleted upon finishing, allowing you to extend it or restart it.
+        This comes with the responsibility of making sure not all the memory is used up
+        by immortal buffers.
+        """
         # buffer should be given as a list of frames where possible
         if type(buffer) == bytes:
             buffer = struct.unpack("<h", buffer)
@@ -77,8 +87,12 @@ class AudioInterface:
                 new_data.append(buffer[i])
 
         self.last += 1
-        buf = AudioBuffer(self.last, len(new_data))
+        buf = AudioBuffer(self.last, len(new_data), immortal)
+
+        self.raw_buffers_mutex.acquire()
         self.raw_buffers[self.last] = new_data
+        self.raw_buffers_mutex.release()
+
         self.playback_pipe.send((MessageType.NEW_BUFFER, buf))
 
         # Now the buffer has been added to the playback processor, we can start extending it
@@ -101,12 +115,29 @@ class AudioInterface:
         return buffer_id
 
     def start_read_buffers_thread(self):
+        backlog = []
         while True:
-            self.playback_pipe.poll(timeout=None)
-            reqs = self.playback_pipe.recv()
+            req = None
+            if len(backlog) == 0:
+                self.playback_pipe.poll(timeout=None)
+                req = self.playback_pipe.recv()
+            else:
+                req = backlog[0]
+                del backlog[0]
 
-            resp = {}
-            for buf_id, offset, size in reqs:
-                resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
+            msg_type, payload = req
+            if msg_type == MessageType.REQUEST_REPONSES:
+                resp = {}
+                for buf_id, offset, size in payload:
+                    resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
 
-            self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
+                self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
+            elif msg_type == MessageType.DELETE_BUFFER:
+                # 0.01s is a completely arbitrary number - we just don't want
+                # deleting buffers to hold up the much more important job of
+                # sending off buffer data to the processor.
+                if not self.raw_buffers_mutex.acquire(timeout=0.01):
+                    self.backlog.append(req)
+                else:
+                    del self.raw_buffers[payload]
+                    self.raw_buffers_mutex.release()

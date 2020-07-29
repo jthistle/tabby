@@ -56,6 +56,16 @@ class AudioProcessor:
 
         self.waiting_for_response = False
 
+        # Take the time to delete a single buffer if we think we can get away
+        # with it, in order to free up space
+        if self.alsa_data_queue.full():
+            for buf_id in self.buffers:
+                buf = self.buffers[buf_id]
+                if buf.finished and not buf.immortal:
+                    self.interface_pipe.send((MessageType.DELETE_BUFFER, buf_id))
+                    del self.buffers[buf_id]
+                    break
+
     def run(self):
         begin_time = time.time()
         while True:
@@ -75,8 +85,9 @@ class AudioProcessor:
 
                 requests.append(buffer.get_request(self.period_size))
 
-            self.interface_pipe.send(requests)
+            self.interface_pipe.send((MessageType.REQUEST_REPONSES, requests))
             self.waiting_for_response = True
+
 
 def run_processor(*args):
     processor = AudioProcessor(*args)

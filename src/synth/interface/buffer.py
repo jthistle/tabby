@@ -5,9 +5,10 @@ from multiprocessing import Queue
 
 
 class AudioBuffer:
-    def __init__(self, _id, size):
+    def __init__(self, _id, size, immortal):
         self.id = _id
         self.size = size
+        self.immortal = immortal
         self.offset = 0
 
     def get_request(self, size):
