@@ -57,7 +57,7 @@ class AudioProcessor:
         self.waiting_for_response = False
 
         # Take the time to delete a single buffer if we think we can get away
-        # with it, in order to free up space
+        # with it, in order to free up memory
         if self.alsa_data_queue.full():
             for buf_id in self.buffers:
                 buf = self.buffers[buf_id]

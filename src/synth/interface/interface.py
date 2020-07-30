@@ -29,7 +29,7 @@ class AudioInterface:
         self.raw_buffers_mutex = Lock()
         self.last = 0
 
-        self.do_halt = False
+        self.halted = False
 
         # Playback process
         # Queue size = max latency / length of period
@@ -74,6 +74,8 @@ class AudioInterface:
         This comes with the responsibility of making sure not all the memory is used up
         by immortal buffers.
         """
+        assert not self.halted
+
         # buffer should be given as a list of frames where possible
         if type(buffer) == bytes:
             buffer = struct.unpack("<h", buffer)
@@ -105,6 +107,8 @@ class AudioInterface:
         return self.last
 
     def extend(self, buffer_id, buffer, channels = 2):
+        assert not self.halted
+
         # buffer should be given as a list of frames where possible
         if type(buffer) == bytes:
             buffer = struct.unpack("<h", buffer)
@@ -117,14 +121,26 @@ class AudioInterface:
         return buffer_id
 
     def start_read_buffers_thread(self):
+        """
+        Expect requests from the playback pipe in the format (message type, payload),
+        where payload is _ for each message type:
+            for REQUEST_RESPONSES:
+                [(buffer id, offset, size)]
+            for DELETE_BUFFER:
+                buffer id
+        """
         backlog = []
         while True:
-            if self.do_halt:
+            if self.halted:
                 break
             req = None
             if len(backlog) == 0:
                 self.playback_pipe.poll(timeout=None)
-                req = self.playback_pipe.recv()
+                try:
+                    req = self.playback_pipe.recv()
+                except EOFError:
+                    # Probably need to halt
+                    continue
             else:
                 req = backlog[0]
                 del backlog[0]
@@ -147,7 +163,7 @@ class AudioInterface:
                     self.raw_buffers_mutex.release()
 
     def halt(self):
-        self.do_halt = True
+        self.halted = True
         self.playback_thread.kill()
         self.alsa_thread.kill()
         self.read_buffers_thread.join()
