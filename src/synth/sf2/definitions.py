@@ -2,6 +2,25 @@
 from enum import Enum
 
 
+class rangesType:
+    def __init__(self, val: int):
+        self.byLo = val & 0b11111111
+        self.byHi = val >> 8
+
+    @classmethod
+    def from_hilo(cls, lo, hi):
+        final = cls(0)
+        final.byLo = lo
+        final.byHi = hi
+        return final
+
+    def contains(self, val):
+        return val >= self.byLo and val <= self.byHi
+
+    def __str__(self):
+        return "rangesType: lo {} hi {}".format(self.byLo, self.byHi)
+
+
 class SFSampleLink(Enum):
     monoSample = 1
     rightSample = 2
@@ -75,14 +94,6 @@ class genAmountType(Enum):
     SHORT = 2
     WORD = 3
 
-
-class rangesType:
-    def __init__(self, val: int):
-        self.byLo = val & 0b11111111
-        self.byHi = val >> 8
-
-    def __str__(self):
-        return "rangesType: lo {} hi {}".format(self.byLo, self.byHi)
 
 # Soundfont 2.01 spec, 8.1.3
 # Assume SHORT if not listed

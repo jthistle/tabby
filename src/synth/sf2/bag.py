@@ -1,6 +1,7 @@
 
 import synth.sf2.decode as decode
 from .definitions import SFGenerator
+from .defaults import SF_GEN_DEFAULTS
 
 
 class Bag:
@@ -28,6 +29,25 @@ class Bag:
             return self.gens[-1].operation != SFGenerator.instrument
         else:
             return self.gens[-1].operation != SFGenerator.sampleID
+
+    @property
+    def key_range(self):
+        assert self.gens is not None
+        if self.gens[0].operation == SFGenerator.keyRange:
+            return self.gens[0].amount
+        return SF_GEN_DEFAULTS[SFGenerator.keyRange]
+
+    @property
+    def vel_range(self):
+        assert self.gens is not None
+        if self.gens[0].operation == SFGenerator.velRange:
+            return self.gens[0].amount
+        elif self.gens[1].operation == SFGenerator.velRange:
+            return self.gens[1].amount
+        return SF_GEN_DEFAULTS[SFGenerator.velRange]
+
+    def applies_to(self, key, vel):
+        return self.is_global or (self.key_range.contains(key) and self.vel_range.contains(vel))
 
     def instrument(self, instruments):
         assert self.is_preset and not self.is_global

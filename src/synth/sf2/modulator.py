@@ -13,6 +13,10 @@ class Modulator:
         self.trans = trans
 
     @classmethod
+    def from_default_def(cls, src: int, dest: SFGenerator, amount: int, amt_src: int, trans: int):
+        return cls(SFModulator(src), dest, amount, SFModulator(amt_src), SFTransform(0))
+
+    @classmethod
     def from_raw(cls, mod):
         # Soundfont 2.01 spec, 8.2
         mod_src_oper = decode.WORD(mod[:2])
@@ -40,6 +44,17 @@ class Modulator:
         mod_trans_real = SFTransform(mod_trans_oper)
 
         return cls(src_oper_real, generator, mod_amount, amt_src_oper_real, mod_trans_real)
+
+    def __eq__(self, b):
+        """
+        A Modulator is defined as identical to another modulator if its source, destination, amount source, and transform are the same in both modulators.
+        """
+        return (
+                self.src == b.src
+            and self.dest == b.dest
+            and self.amt_src == b.amt_src
+            and self.trans == b.trans
+        )
 
     def __str__(self):
         return "Modulator, \n- source {} \n- dest {} \n- amount {} \n- amount source {} \n- transform {}".format(

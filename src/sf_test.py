@@ -1,11 +1,15 @@
 
 from synth.synthesizer import Synthesizer
+from synth.event import EventNoteOn
 from util.logger import logger
 
 synth = Synthesizer()
 
 synth.load_soundfont("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
-synth.use_preset(0, 74)
+inst = synth.new_instrument(0, 74)
 
-# for x in synth.sfont.presets:
-#     print(x)
+print(inst.preset)
+
+inst.send_event(EventNoteOn(60, 100))
+
+synth.halt()

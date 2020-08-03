@@ -20,6 +20,12 @@ class Instrument:
 
         return cls(name, bag_ndx)
 
+    def get_sample(self, key, vel, samples):
+        for bag in self.bags:
+            if bag.is_global or not bag.applies_to(key, vel):
+                continue
+            return bag.sample(samples)
+
     def __str__(self):
         bags = []
         for x in self.bags:
