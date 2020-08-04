@@ -64,7 +64,7 @@ class AudioInterface:
             self.playback_pipe.send((MessageType.EXTEND_BUFFER, (buf_id, xtnd)))
             start_point += chunk_size
 
-    def play(self, buffer, channels = 2, immortal = False):
+    def play(self, buffer, channels = 2, loop = None, immortal = False):
         """
         Play a buffer, which should be given as a list of frames. bytes-like objects
         are also accepted. channels specifies the number of channels of the buffer to
@@ -91,7 +91,8 @@ class AudioInterface:
                 new_data.append(buffer[i])
 
         self.last += 1
-        buf = AudioBuffer(self.last, len(new_data), immortal)
+        loop = None if loop is None else tuple([x * channel_ratio for x in loop])
+        buf = AudioBuffer(self.last, len(new_data), immortal, loop)
 
         self.raw_buffers_mutex.acquire()
         self.raw_buffers[self.last] = new_data
@@ -120,6 +121,9 @@ class AudioInterface:
 
         return buffer_id
 
+    def end_loop(self, buffer_id):
+        self.playback_pipe.send((MessageType.END_LOOP, buffer_id))
+
     def start_read_buffers_thread(self):
         """
         Expect requests from the playback pipe in the format (message type, payload),
@@ -134,22 +138,33 @@ class AudioInterface:
             if self.halted:
                 break
             req = None
-            if len(backlog) == 0:
+            if not self.playback_pipe.poll() and len(backlog) > 0:
+                req = backlog[0]
+                del backlog[0]
+            else:
                 self.playback_pipe.poll(timeout=None)
                 try:
                     req = self.playback_pipe.recv()
                 except EOFError:
                     # Probably need to halt
                     continue
-            else:
-                req = backlog[0]
-                del backlog[0]
 
             msg_type, payload = req
             if msg_type == MessageType.REQUEST_REPONSES:
                 resp = {}
-                for buf_id, offset, size in payload:
-                    resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
+                for buf_id, offset, size, loop_start, loop_end in payload:
+                    uses_loop = loop_start != -1 and loop_end != -1
+                    if not uses_loop:
+                        resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
+                        continue
+
+                    remaining = size
+                    resp[buf_id] = []
+                    while remaining > 0:
+                        chunk_size = min(remaining, min(size, loop_end - offset))
+                        resp[buf_id] += self.raw_buffers[buf_id][offset:offset + chunk_size]
+                        remaining -= chunk_size
+                        offset = loop_start
 
                 self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
             elif msg_type == MessageType.DELETE_BUFFER:

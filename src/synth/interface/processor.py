@@ -26,6 +26,7 @@ class AudioProcessor:
             for EXTEND_BUFFER:  (buffer id, size change)
             for REMOVE_BUFFER:  not implemented
             for REQUEST_REPONSES: { buffer id: buffer data }
+            for END_LOOP: buffer id
         """
         while self.interface_pipe.poll():
             msg_type, payload = self.interface_pipe.recv()
@@ -35,6 +36,8 @@ class AudioProcessor:
                 self.buffers[payload[0]].size += payload[1]
             elif msg_type == MessageType.REQUEST_REPONSES:
                 self.process_responses(payload)
+            elif msg_type == MessageType.END_LOOP:
+                self.buffers[payload].end_loop()
 
     def correct_val(self, val):
         return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))

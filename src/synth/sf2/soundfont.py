@@ -155,6 +155,12 @@ class Soundfont:
 
         self.bake_presets()
 
+    def presets_list_user(self):
+        res = ""
+        for p in self.presets:
+            res += "{:03d}:{:03d}: {}\n".format(p.bank, p.preset_num, p.name)
+        return res
+
     def __str__(self):
         return """Soundfont '{}' on version {}.
 - {} samples

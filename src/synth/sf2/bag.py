@@ -42,7 +42,7 @@ class Bag:
         assert self.gens is not None
         if self.gens[0].operation == SFGenerator.velRange:
             return self.gens[0].amount
-        elif self.gens[1].operation == SFGenerator.velRange:
+        elif len(self.gens) > 1 and self.gens[1].operation == SFGenerator.velRange:
             return self.gens[1].amount
         return SF_GEN_DEFAULTS[SFGenerator.velRange]
 

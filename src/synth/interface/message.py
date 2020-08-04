@@ -6,3 +6,4 @@ class MessageType(Enum):
     EXTEND_BUFFER = 2
     DELETE_BUFFER = 3
     REQUEST_REPONSES = 4
+    END_LOOP = 5
