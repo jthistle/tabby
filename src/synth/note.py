@@ -1,6 +1,7 @@
 
 from .samples_cache import data_to_samples
 from .repitch import change_pitch
+from .sf2.definitions import SFGenerator, LoopType
 
 
 class Note:
@@ -14,17 +15,22 @@ class Note:
 
         self.playback = None
 
-        print("gens")
-        for g in self.gens:
-            print(">",g,self.gens[g])
+        # print("gens")
+        # for g in self.gens:
+        #     print(">",g,self.gens[g])
 
-        print("\n\nmods")
-        for m in self.mods:
-            print(">",m)
+        # print("\n\nmods")
+        # for m in self.mods:
+        #     print(">",m)
 
     def play(self, inter):
         if not self.sample.is_mono:
             print("Stereo samples are not supported yet")
             return
-        self.playback = inter.play(self.sample_data, channels=1)
-        # TODO
+        loop = None
+        if self.gens[SFGenerator.sampleModes].loop_type in (LoopType.CONT_LOOP, LoopType.KEY_LOOP):
+            loop = self.sample.loop
+        self.playback = inter.play(self.sample_data, channels=1, loop=loop)
+
+    def stop(self, inter):
+        inter.end_loop(self.playback)

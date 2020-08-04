@@ -4,7 +4,7 @@ from enum import Enum
 
 class EventType(Enum):
     NOTE_ON = 1
-    NOTE_OFF = 1
+    NOTE_OFF = 2
 
 
 
