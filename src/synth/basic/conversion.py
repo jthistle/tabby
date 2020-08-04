@@ -2,7 +2,7 @@
 import struct
 
 """
-We are assuming that we're working with big-endian, 16-bit samples.
+We are assuming that we're working with little-endian, 16-bit samples.
 """
 
 def data_to_samples(data: bytes):

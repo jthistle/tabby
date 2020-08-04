@@ -21,6 +21,26 @@ class rangesType:
         return "rangesType: lo {} hi {}".format(self.byLo, self.byHi)
 
 
+# Soundfont 2.01 spec, 8.1.2, number 54
+# "0 indicates a sound reproduced with no loop, 1 indicates a sound which loops
+# continuously, 2 is unused but should be interpreted as indicating no loop,
+# and 3 indicates a sound which loops for the duration of key depression then
+# proceeds to play the remainder of the sample."
+class LoopType(Enum):
+    NO_LOOP = 0
+    CONT_LOOP = 1
+    UNUSED_NO_LOOP = 2
+    KEY_LOOP = 3
+
+
+class sampleModes:
+    def __init__(self, val):
+        self.loop_type = LoopType(val & 0b11)
+
+    def __str__(self):
+        return "sampleModes: {}".format(self.loop_type)
+
+
 class SFSampleLink(Enum):
     monoSample = 1
     rightSample = 2
@@ -93,6 +113,7 @@ class genAmountType(Enum):
     rangesType = 1
     SHORT = 2
     WORD = 3
+    sampleModes = 4
 
 
 # Soundfont 2.01 spec, 8.1.3
@@ -104,7 +125,10 @@ GEN_AMOUNT_TYPE_MAP = {
     ],
     # I don't think any of these exist. It's really hard to tell from what
     # the spec says, due to its ambiguity.
-    genAmountType.WORD: []
+    genAmountType.WORD: [],
+    genAmountType.sampleModes: [
+        SFGenerator.sampleModes
+    ]
 }
 
 def get_gen_amount_type(generator):

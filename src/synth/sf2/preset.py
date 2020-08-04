@@ -43,7 +43,6 @@ class Preset:
 
         # Instrument zones are absolute
         mods = [x for x in DEFAULT_MODULATORS]
-        print(key, vel)
         for bag in inst.bags:
             if not bag.applies_to(key, vel):
                 continue

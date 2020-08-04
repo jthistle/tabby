@@ -2,7 +2,7 @@
 from util.logger import logger
 
 import synth.sf2.decode as decode
-from .definitions import SFGenerator, genAmountType, rangesType, get_gen_amount_type
+from .definitions import SFGenerator, genAmountType, rangesType, sampleModes, get_gen_amount_type
 
 
 class Generator:
@@ -35,6 +35,9 @@ class Generator:
         elif amount_type == genAmountType.rangesType:
             raw_val = decode.WORD(inst[2:4])
             amount = rangesType(raw_val)
+        elif amount_type == genAmountType.sampleModes:
+            raw_val = decode.WORD(inst[2:4])
+            amount = sampleModes(raw_val)
         elif amount_type == genAmountType.WORD:
             amount = decode.WORD(inst[2:4])
 

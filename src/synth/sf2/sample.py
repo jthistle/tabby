@@ -49,6 +49,10 @@ class Sample:
         # Works for mono... TODO stereo?
         return len(self.data) // 2
 
+    @property
+    def is_mono(self):
+        return self.type == SFSampleLink.monoSample
+
     def __str__(self):
         return "Sample '{}' of length {:.2f}s ({} samples), looping ({},{}), fs {}Hz, pitch {} ({:+d}), type {}".format(
             self.name, self.num_samples / self.sample_rate, self.num_samples, *self.loop, self.sample_rate, self.pitch, self.pitch_correction, self.type
