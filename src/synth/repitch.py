@@ -31,6 +31,19 @@ def change_pitch(samples, rate):
     return finished
 
 
-def change_pitch_cents(samples, semitones):
-    ratio = 2 ** (semitones / 1200)
+def change_pitch_cents(samples, cents):
+    ratio = cents_to_ratio(cents)
     return change_pitch(samples, ratio)
+
+
+def change_sample_point(ind, cents):
+    ratio = cents_to_ratio(cents)
+    return int(ind / ratio)
+
+
+def change_sample_point_ratio(ind, ratio):
+    return int(ind / ratio)
+
+
+def cents_to_ratio(cents):
+    return 2 ** (cents / 1200)

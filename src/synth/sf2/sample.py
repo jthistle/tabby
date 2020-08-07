@@ -37,7 +37,7 @@ class Sample:
             logger.warn("Warning: sample {} has unusual sample rate of {}".format(name, sample_rate))
 
         by_original_pitch = decode.BYTE(smpl[40:41])
-        pitch_correction = ord(decode.CHAR(smpl[41:42]))
+        pitch_correction = decode.CHAR(smpl[41:42])
 
         sample_link = decode.WORD(smpl[42:44])
         sample_type = SFSampleLink(decode.WORD(smpl[44:46]))

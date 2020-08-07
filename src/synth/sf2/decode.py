@@ -24,7 +24,7 @@ def BYTE(val):
     return struct.unpack("<B", val)[0]
 
 def CHAR(val):
-    return struct.unpack("<c", val)[0]
+    return struct.unpack("<b", val)[0]
 
 def SHORT(val):
     return struct.unpack("<h", val)[0]

@@ -1,5 +1,5 @@
 
-from .definitions import SFGenerator, rangesType
+from .definitions import SFGenerator, rangesType, sampleModes
 from .modulator import Modulator
 
 
@@ -50,7 +50,7 @@ SF_GEN_DEFAULTS = {
     SFGenerator.endloopAddrsCoarseOffset: 0,
     SFGenerator.coarseTune: 0,
     SFGenerator.fineTune: 0,
-    SFGenerator.sampleModes: 0,
+    SFGenerator.sampleModes: sampleModes(0),
     SFGenerator.scaleTuning: 100,
     SFGenerator.exclusiveClass: 0,
     SFGenerator.overridingRootKey: -1,
