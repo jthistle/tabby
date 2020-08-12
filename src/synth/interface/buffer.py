@@ -5,6 +5,8 @@ from multiprocessing import Queue
 
 
 class AudioBuffer:
+    is_custom = False
+
     def __init__(self, _id, size, immortal, loop: (int, int)):
         self.id = _id
         self.size = size
@@ -21,7 +23,7 @@ class AudioBuffer:
         else:
             loop_start = self.loop_start
             loop_end = self.loop_end
-        return (self.id, self.offset, size, loop_start, loop_end)
+        return (False, self.id, size, self.offset, loop_start, loop_end)
 
     def end_loop(self):
         self.do_loop = False
@@ -43,3 +45,24 @@ class AudioBuffer:
     @property
     def finished(self):
         return self.offset >= self.size
+
+
+class CustomBuffer:
+    is_custom = True
+    id = None
+
+    def __init__(self):
+        pass
+
+    def get_request(self, size):
+        return (True, self.id, size)
+
+    def read(self, size):
+        raise NotImplementedError()
+
+    def end_loop(self):
+        raise NotImplementedError()
+
+    @property
+    def finished(self):
+        raise NotImplementedError()

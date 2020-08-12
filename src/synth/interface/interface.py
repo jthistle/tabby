@@ -24,9 +24,9 @@ class AudioInterface:
         self.init_buffer_samples = int(self.cfg.sample_rate * self.target_latency)
         self.max_latency = max_latency
 
-        self.buffer_pipes = []
         self.raw_buffers = {}
         self.raw_buffers_mutex = Lock()
+        self.custom_collect_funcs = {}
         self.last = 0
 
         self.halted = False
@@ -124,12 +124,22 @@ class AudioInterface:
     def end_loop(self, buffer_id):
         self.playback_pipe.send((MessageType.END_LOOP, buffer_id))
 
+    def add_custom_buffer(self, custom_buf, collect_func):
+        self.last += 1
+        custom_buf.id = self.last
+        self.custom_collect_funcs[custom_buf] = collect_func
+
+        self.playback_pipe.send((MessageType.NEW_BUFFER, custom_buf))
+
     def start_read_buffers_thread(self):
         """
         Expect requests from the playback pipe in the format (message type, payload),
         where payload is _ for each message type:
             for REQUEST_RESPONSES:
-                [(buffer id, offset, size)]
+                [(is custom, buffer id, size, *args)]
+                if not custom, args are:
+                    (offset, loop start, loop end)
+                else if is custom, args will be passed to collection function.
             for DELETE_BUFFER:
                 buffer id
         """
@@ -152,19 +162,24 @@ class AudioInterface:
             msg_type, payload = req
             if msg_type == MessageType.REQUEST_REPONSES:
                 resp = {}
-                for buf_id, offset, size, loop_start, loop_end in payload:
-                    uses_loop = loop_start != -1 and loop_end != -1
-                    if not uses_loop:
-                        resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
-                        continue
+                for buffer_meta in payload:
+                    if not buffer_meta[0]:   # is not custom
+                        _, buf_id, size, offset, loop_start, loop_end = buffer_meta
+                        uses_loop = loop_start != -1 and loop_end != -1
+                        if not uses_loop:
+                            resp[buf_id] = self.raw_buffers[buf_id][offset:offset + size]
+                            continue
 
-                    remaining = size
-                    resp[buf_id] = []
-                    while remaining > 0:
-                        chunk_size = min(remaining, min(size, loop_end - offset))
-                        resp[buf_id] += self.raw_buffers[buf_id][offset:offset + chunk_size]
-                        remaining -= chunk_size
-                        offset = loop_start
+                        remaining = size
+                        resp[buf_id] = []
+                        while remaining > 0:
+                            chunk_size = min(remaining, min(size, loop_end - offset))
+                            resp[buf_id] += self.raw_buffers[buf_id][offset:offset + chunk_size]
+                            remaining -= chunk_size
+                            offset = loop_start
+                    else:
+                        _, buf_id, size, *args = buffer_meta
+                        resp[buf_id] = self.custom_collect_funcs[buf_id](size, *args)
 
                 self.playback_pipe.send((MessageType.REQUEST_REPONSES, resp))
             elif msg_type == MessageType.DELETE_BUFFER:
