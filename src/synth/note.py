@@ -18,8 +18,17 @@ class Note:
 
         self.playback = None
 
-        self.hard_pitch_diff = (self.key - self.sample.pitch) * 100 + self.sample.pitch_correction
+        # SoundFont spec 2.01, 8.1.2
+        # SFGenerator.overridingRootKey:
+        # "This parameter represents the MIDI key number at which the sample is to be played back
+        #  at its original sample rate.  If not present, or if present with a value of -1, then
+        #  the sample header parameter Original Key is used in its place.  If it is present in the
+        #  range 0-127, then the indicated key number will cause the sample to be played back at
+        #  its sample header Sample Rate"
+        original_key = self.sample.pitch if self.gens[SFGenerator.overridingRootKey] == -1 else self.gens[SFGenerator.overridingRootKey]
+        self.hard_pitch_diff = (self.key - original_key) * 100 + self.sample.pitch_correction
         self.hard_pitch_diff += self.gens[SFGenerator.coarseTune] * 100 + self.gens[SFGenerator.fineTune]
+
 
         # We need to adjust everything to fit the sample rate in use
         sample_ratio = self.sample.sample_rate / BASE_SAMPLE_RATE
@@ -35,10 +44,12 @@ class Note:
 
         self.loop = None
         if self.gens[SFGenerator.sampleModes].loop_type in (LoopType.CONT_LOOP, LoopType.KEY_LOOP):
+            self.loop = [x for x in self.sample.loop]
+            self.loop[0] += self.gens[SFGenerator.startloopAddrsOffset] + self.gens[SFGenerator.startloopAddrsCoarseOffset] * COARSE_SIZE
+            self.loop[1] += self.gens[SFGenerator.endloopAddrsOffset] + self.gens[SFGenerator.endloopAddrsCoarseOffset] * COARSE_SIZE
+
             self.loop = [change_sample_point_ratio(x, self.total_ratio) for x in self.sample.loop]
 
-        self.loop[0] += self.gens[SFGenerator.startloopAddrsOffset] + self.gens[SFGenerator.startloopAddrsCoarseOffset] * COARSE_SIZE
-        self.loop[1] += self.gens[SFGenerator.endloopAddrsOffset] + self.gens[SFGenerator.endloopAddrsCoarseOffset] * COARSE_SIZE
 
         # Optional debug:
         # print("gens")
