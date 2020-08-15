@@ -12,7 +12,7 @@ synth = Synthesizer()
 synth.load_soundfont("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
 # synth.load_soundfont("/home/james/Documents/MuseScore3Development/SoundFonts/MuseScore_General_Lite-v0.1.5/MuseScore_General_Lite.sf2")
 
-inst = synth.new_instrument(0, 17)
+inst = synth.new_instrument(1, 123)
 
 REPITCH = 12
 

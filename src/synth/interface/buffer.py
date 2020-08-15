@@ -51,11 +51,10 @@ class CustomBuffer:
     is_custom = True
     id = None
     finished = False
-    looping = True
     immortal = False
 
-    def __init__(self):
-        pass
+    def __init__(self, looping):
+        self.looping = looping
 
     def get_request(self, size):
         return (True, self.id, size, self.looping)

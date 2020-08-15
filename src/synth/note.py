@@ -80,7 +80,7 @@ class Note:
             print("Stereo samples are not supported yet")
             return
 
-        self.playback = inter.add_custom_buffer(CustomBuffer(), self.collect)
+        self.playback = inter.add_custom_buffer(CustomBuffer(self.loop is not None), self.collect)
 
     def stop(self, inter):
         if self.loop is not None:

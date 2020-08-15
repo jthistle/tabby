@@ -12,17 +12,20 @@ synth = Synthesizer()
 synth.load_soundfont("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
 # synth.load_soundfont("/home/james/Documents/MuseScore3Development/SoundFonts/MuseScore_General_Lite-v0.1.5/MuseScore_General_Lite.sf2")
 
-inst = synth.new_instrument(0, 64)
+inst = synth.new_instrument(0, 0)
 
 print(synth.sfont.presets_list_user())
 
 input()
-for i in range(10):
-    inst.send_event(EventNoteOn(NOTE, 100))
-    time.sleep(2)
-    inst.send_event(EventNoteOff(NOTE))
-    time.sleep(0.5)
-    NOTE += 2
+inst.send_event(EventNoteOn(60, 100))
+inst.send_event(EventNoteOn(64, 100))
+inst.send_event(EventNoteOn(67, 100))
+
+input()
+
+inst.send_event(EventNoteOff(60))
+inst.send_event(EventNoteOff(64))
+inst.send_event(EventNoteOff(67))
 
 input()
 synth.halt()

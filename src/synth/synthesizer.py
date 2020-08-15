@@ -9,7 +9,8 @@ class Synthesizer:
 
     def __init__(self):
         cfg = AudioConfig()
-        self.interface = AudioInterface(cfg, max_latency=0.1)
+        cfg.period_size = 64
+        self.interface = AudioInterface(cfg, max_latency=0.01)
 
     def load_soundfont(self, path):
         self.sfont = Soundfont(path)
