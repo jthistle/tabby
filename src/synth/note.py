@@ -5,11 +5,14 @@ import struct
 from .repitch import cents_to_ratio
 from .sf2.definitions import SFGenerator, LoopType
 from .interface import CustomBuffer
+from .sf2.convertors import timecents_to_secs, decibels_to_atten
+from .envelope import Envelope
 from util.logger import logger
 
 
 COARSE_SIZE = 2 ** 15
 BASE_SAMPLE_RATE = 44100
+SINGLE_SAMPLE_LEN = 1 / 44100
 
 
 def interpolate(a, b, t):
@@ -27,7 +30,6 @@ class Note:
 
         self.playback = None
         self.position = 0
-        self.stopped = False    # TEMP - replace with proper env
 
         # SoundFont spec 2.01, 8.1.2
         # SFGenerator.overridingRootKey:
@@ -40,20 +42,27 @@ class Note:
         self.hard_pitch_diff = (self.key - original_key) * 100 + self.sample.pitch_correction
         self.hard_pitch_diff += self.gens[SFGenerator.coarseTune] * 100 + self.gens[SFGenerator.fineTune]
 
-
         sample_ratio = self.sample.sample_rate / BASE_SAMPLE_RATE
         self.total_ratio = sample_ratio * cents_to_ratio(self.hard_pitch_diff)
 
         offset_s = self.gens[SFGenerator.startAddrsOffset] + self.gens[SFGenerator.startAddrsCoarseOffset] * COARSE_SIZE
         offset_e = self.gens[SFGenerator.endAddrsOffset] + self.gens[SFGenerator.endAddrsCoarseOffset] * COARSE_SIZE
 
-        # buffer should be given as a list of frames where possible
         self.sample_data = struct.unpack("<{}h".format(len(sample.data) // 2), sample.data)
         self.sample_size = len(self.sample_data)
 
         self.loop = None
         if self.gens[SFGenerator.sampleModes].loop_type in (LoopType.CONT_LOOP, LoopType.KEY_LOOP):
             self.loop = [x for x in self.sample.loop]
+
+        self.vol_env = Envelope(
+            timecents_to_secs(self.gens[SFGenerator.delayVolEnv]),
+            timecents_to_secs(self.gens[SFGenerator.attackVolEnv]),
+            timecents_to_secs(self.gens[SFGenerator.holdVolEnv]),
+            timecents_to_secs(self.gens[SFGenerator.decayVolEnv]),
+            decibels_to_atten(self.gens[SFGenerator.sustainVolEnv] / 10),   # sus uses cB = 1/10 dB
+            timecents_to_secs(self.gens[SFGenerator.releaseVolEnv]),
+        )
 
         # Optional debug:
         # print("gens")
@@ -76,13 +85,11 @@ class Note:
     def stop(self, inter):
         if self.loop is not None:
             inter.end_loop(self.playback)
-            self.stopped = True
+            self.vol_env.release()
 
     def collect(self, size, looping):
-        if self.stopped:
+        if self.vol_env.finished:
             return []
-
-        LIMIT = (1 << 15) - 1
 
         channel_ratio = 2        # TODO do this properly
         rate = self.total_ratio
@@ -95,7 +102,7 @@ class Note:
             frac = self.position - i
             s1 = self.sample_data[i]
             s2 = self.sample_data[i + math.ceil(rate)]
-            val = int(interpolate(s1, s2, frac))
+            val = int(interpolate(s1, s2, frac)) * self.vol_env.current_val
 
             # Apply clipping
             for i in range(channel_ratio):
@@ -106,6 +113,8 @@ class Note:
             if looping:
                 if self.position > self.loop[1]:
                     self.position = self.loop[0] + (self.position - self.loop[1])
+
+            self.vol_env.update(SINGLE_SAMPLE_LEN)
 
             if count >= size:
                 break

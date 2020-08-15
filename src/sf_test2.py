@@ -12,7 +12,9 @@ synth = Synthesizer()
 synth.load_soundfont("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
 # synth.load_soundfont("/home/james/Documents/MuseScore3Development/SoundFonts/MuseScore_General_Lite-v0.1.5/MuseScore_General_Lite.sf2")
 
-inst = synth.new_instrument(0, 56)
+inst = synth.new_instrument(0, 17)
+
+REPITCH = 12
 
 BEAT = 60 / 140
 
@@ -122,9 +124,9 @@ for note in MUSIC:
         time.sleep(note[1])
         continue
     note_val = name_to_val(note[0])
-    inst.send_event(EventNoteOn(note_val, 100))
+    inst.send_event(EventNoteOn(note_val + REPITCH, 100))
     time.sleep(note[1] - 0.05)
-    inst.send_event(EventNoteOff(note_val))
+    inst.send_event(EventNoteOff(note_val + REPITCH))
     time.sleep(0.05)
 
 input()

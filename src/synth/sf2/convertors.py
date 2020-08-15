@@ -30,8 +30,14 @@ def secs_to_timecents(s):
 
 def timecents_to_secs(tcts):
     global MIN
-    if cts == MIN:
+    if tcts == MIN:
         return 0
 
     return 2 ** (tcts / 1200)
 
+
+def decibels_to_atten(db):
+    if db >= 1000:
+        # conventionally inf dB
+        return 0
+    return 10 ** (-db / 20)

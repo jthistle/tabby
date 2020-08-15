@@ -26,10 +26,9 @@ class Instrument:
             self.notes.append(new_note)
             new_note.play(self.parent.interface)
         elif event.type == EventType.NOTE_OFF:
-            for i in range(len(self.notes)):
+            for i in range(len(self.notes) - 1, -1, -1):
                 note = self.notes[i]
                 if note.key != event.note:
                     continue
                 note.stop(self.parent.interface)
                 del self.notes[i]
-                break

@@ -15,7 +15,7 @@ class AudioProcessor:
         self.interface_pipe = interface_pipe
         self.alsa_data_queue = alsa_data_queue
         self.buffers = {}
-        self.volume = 1
+        self.volume = 0.1
 
         self.waiting_for_response = False
 
@@ -40,7 +40,15 @@ class AudioProcessor:
                 self.buffers[payload].end_loop()
 
     def correct_val(self, val):
-        return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))
+        # return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))
+        val *= self.volume
+        if val > VAL_LIMIT:
+            print("clip")
+            return VAL_LIMIT
+        elif val < -VAL_LIMIT:
+            print("clip")
+            return -VAL_LIMIT
+        return int(val)
 
     def process_responses(self, responses):
         data = [0] * self.period_size
