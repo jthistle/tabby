@@ -1,6 +1,5 @@
 
 import math
-# import alsaaudio as aa
 import time
 import struct
 from threading import Thread, Lock
@@ -127,9 +126,10 @@ class AudioInterface:
     def add_custom_buffer(self, custom_buf, collect_func):
         self.last += 1
         custom_buf.id = self.last
-        self.custom_collect_funcs[custom_buf] = collect_func
+        self.custom_collect_funcs[self.last] = collect_func
 
         self.playback_pipe.send((MessageType.NEW_BUFFER, custom_buf))
+        return self.last
 
     def start_read_buffers_thread(self):
         """
@@ -187,9 +187,13 @@ class AudioInterface:
                 # deleting buffers to hold up the much more important job of
                 # sending off buffer data to the processor.
                 if not self.raw_buffers_mutex.acquire(timeout=0.01):
-                    self.backlog.append(req)
+                    backlog.append(req)
                 else:
-                    del self.raw_buffers[payload]
+                    if payload in self.raw_buffers:
+                        del self.raw_buffers[payload]
+                    else:
+                        # is custom
+                        del self.custom_collect_funcs[payload]
                     self.raw_buffers_mutex.release()
 
     def halt(self):

@@ -46,7 +46,7 @@ class AudioProcessor:
         data = [0] * self.period_size
         for buf_id in responses:
             i = 0
-            for part in self.buffers[buf_id].read(responses[buf_id]):
+            for part in self.buffers[buf_id].read(responses[buf_id], self.period_size):
                 data[i] += part
                 i += 1
 
@@ -70,7 +70,6 @@ class AudioProcessor:
                     break
 
     def run(self):
-        begin_time = time.time()
         while True:
             self.read_buffers()
 

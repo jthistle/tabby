@@ -28,7 +28,7 @@ class AudioBuffer:
     def end_loop(self):
         self.do_loop = False
 
-    def read(self, response):
+    def read(self, response, size):
         tot = 0
         for x in response:
             yield x
@@ -39,7 +39,7 @@ class AudioBuffer:
             if self.offset == self.loop_end:
                 self.offset = self.loop_start
 
-        for i in range(len(response) - tot):
+        for i in range(size - tot):
             yield 0
 
     @property
@@ -50,19 +50,23 @@ class AudioBuffer:
 class CustomBuffer:
     is_custom = True
     id = None
+    finished = False
+    looping = True
+    immortal = False
 
     def __init__(self):
         pass
 
     def get_request(self, size):
-        return (True, self.id, size)
+        return (True, self.id, size, self.looping)
 
-    def read(self, size):
-        raise NotImplementedError()
+    def read(self, response, size):
+        for x in response:
+            yield x
+
+        for i in range(size - len(response)):
+            self.finished = True
+            yield 0
 
     def end_loop(self):
-        raise NotImplementedError()
-
-    @property
-    def finished(self):
-        raise NotImplementedError()
+        self.looping = False
