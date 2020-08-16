@@ -22,13 +22,13 @@ class Instrument:
             instrument = self.preset.get_instrument(event.note, event.velocity, self.sfont.instruments)
             sample = instrument.get_sample(event.note, event.velocity, self.sfont.samples)
             gens, mods = self.preset.get_gens_and_mods(event.note, event.velocity, instrument)
-            new_note = Note(event.note, event.velocity, sample, gens, mods)
+            new_note = Note(self.parent.interface, event.note, event.velocity, sample, gens, mods)
             self.notes.append(new_note)
-            new_note.play(self.parent.interface)
+            new_note.play()
         elif event.type == EventType.NOTE_OFF:
             for i in range(len(self.notes) - 1, -1, -1):
                 note = self.notes[i]
                 if note.key != event.note:
                     continue
-                note.stop(self.parent.interface)
+                note.stop()
                 del self.notes[i]

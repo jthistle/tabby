@@ -35,7 +35,7 @@ class AudioInterface:
         queue_size = int(self.max_latency / self.cfg.period_length)
         self.playback_pipe, playback_rec = Pipe()
         alsa_data_queue = Queue(maxsize=queue_size)
-        self.playback_thread = Process(target=run_processor, args=(self.cfg.period_size, playback_rec, alsa_data_queue))
+        self.playback_thread = Process(target=run_processor, args=(config, playback_rec, alsa_data_queue))
 
         # ALSA relay
         self.alsa_thread = Process(target=run_alsa, args=(self.cfg, alsa_data_queue))
@@ -46,6 +46,9 @@ class AudioInterface:
         self.playback_thread.start()
         self.alsa_thread.start()
         self.read_buffers_thread.start()
+
+        logger.info("Audio interface: init with cfg: {}".format(self.cfg))
+        logger.info("Audio interface: queue size is {} (max latency {:.5f}s)".format(queue_size, max_latency))
 
         # Run some zeros through the system to prevent underruns on initial playback
         blank = [0] * self.cfg.sample_rate

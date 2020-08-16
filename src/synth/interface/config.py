@@ -6,3 +6,6 @@ class AudioConfig:
         self.period_size = period_size  # frames
 
         self.period_length = self.period_size / (self.channels * self.sample_rate)
+
+    def __str__(self):
+        return "AudioConfig: fs {}Hz, {} chan, period size {} frames".format(self.sample_rate, self.channels, self.period_size)

@@ -10,8 +10,9 @@ VAL_LIMIT = (1 << 15) - 1
 
 
 class AudioProcessor:
-    def __init__(self, period_size, interface_pipe, alsa_data_queue):
-        self.period_size = period_size
+    def __init__(self, cfg, interface_pipe, alsa_data_queue):
+        self.cfg = cfg
+        self.period_size_words = cfg.period_size * cfg.channels
         self.interface_pipe = interface_pipe
         self.alsa_data_queue = alsa_data_queue
         self.buffers = {}
@@ -43,24 +44,24 @@ class AudioProcessor:
         # return int(max(-VAL_LIMIT, min(VAL_LIMIT, val * self.volume)))
         val *= self.volume
         if val > VAL_LIMIT:
-            print("clip")
+            # print("clip")
             return VAL_LIMIT
         elif val < -VAL_LIMIT:
-            print("clip")
+            # print("clip")
             return -VAL_LIMIT
         return int(val)
 
     def process_responses(self, responses):
-        data = [0] * self.period_size
+        data = [0] * self.period_size_words
         for buf_id in responses:
             i = 0
-            for part in self.buffers[buf_id].read(responses[buf_id], self.period_size):
+            for part in self.buffers[buf_id].read(responses[buf_id], self.period_size_words):
                 data[i] += part
                 i += 1
 
         data = [self.correct_val(x) for x in data]
         self.alsa_data_queue.put(struct.pack(
-                "<{}h".format(self.period_size),
+                "<{}h".format(self.period_size_words),
                 *data
             )
         )
@@ -93,7 +94,7 @@ class AudioProcessor:
                 if buffer.finished:
                     continue
 
-                requests.append(buffer.get_request(self.period_size))
+                requests.append(buffer.get_request(self.period_size_words))
 
             self.interface_pipe.send((MessageType.REQUEST_REPONSES, requests))
             self.waiting_for_response = True

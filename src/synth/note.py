@@ -1,6 +1,7 @@
 
 import math
 import struct
+import time
 
 from .repitch import cents_to_ratio
 from .sf2.definitions import SFGenerator, LoopType
@@ -10,18 +11,19 @@ from .envelope import Envelope
 from util.logger import logger
 
 
+# Optimization tooling
+import cProfile
+profile = cProfile.Profile()
+
+
 COARSE_SIZE = 2 ** 15
 BASE_SAMPLE_RATE = 44100
 SINGLE_SAMPLE_LEN = 1 / 44100
 
 
-def interpolate(a, b, t):
-    # Linear interpolation is good enough
-    return a + (b - a) * t
-
-
 class Note:
-    def __init__(self, key, on_vel, sample, gens, mods):
+    def __init__(self, inter, key, on_vel, sample, gens, mods):
+        self.inter = inter
         self.sample = sample
         self.key = key
         self.on_vel = on_vel
@@ -75,20 +77,23 @@ class Note:
 
         # print("\nsample:", self.sample)
 
-    def play(self, inter):
+    def play(self):
         if not self.sample.is_mono:
             print("Stereo samples are not supported yet")
             return
 
-        self.playback = inter.add_custom_buffer(CustomBuffer(self.loop is not None), self.collect)
+        self.playback = self.inter.add_custom_buffer(CustomBuffer(self.loop is not None), self.collect)
 
-    def stop(self, inter):
-        if self.loop is not None:
-            inter.end_loop(self.playback)
-            self.vol_env.release()
+    def stop(self):
+        self.vol_env.release()
 
-    def collect(self, size, looping):
+    def collect(self, *args):
+        return self.__collect(*args)
+        # return profile.runcall(self.__collect, *args)
+
+    def __collect(self, size, looping):
         if self.vol_env.finished:
+            self.inter.end_loop(self.playback)
             return []
 
         channel_ratio = 2        # TODO do this properly
@@ -96,27 +101,51 @@ class Note:
 
         finished = []
         count = 0
-        end = self.sample_size - math.ceil(rate)
-        while self.position < end:
+        offset = math.ceil(rate)
+        end = self.sample_size - offset
+        while looping or self.position < end:
             i = int(self.position)
             frac = self.position - i
             s1 = self.sample_data[i]
-            s2 = self.sample_data[i + math.ceil(rate)]
-            val = int(interpolate(s1, s2, frac)) * self.vol_env.current_val
+            # If adding the offset overshoots the end of the sample loop, make sure that we wrap back arround
+            # to the start of the loop again. Enjoy the horrible conditional.
+            s2 = self.sample_data[i + offset if not looping or i + offset < self.loop[1] else self.loop[0] + (i + offset - self.loop[1])]
+            val = int(s1 + (s2 - s1) * frac) * self.vol_env.current_val
 
-            # Apply clipping
-            for i in range(channel_ratio):
-                finished.append(val)
-                count += 1
+            finished += [val] * channel_ratio
+            count += channel_ratio
 
             self.position += rate
-            if looping:
-                if self.position > self.loop[1]:
-                    self.position = self.loop[0] + (self.position - self.loop[1])
+            if looping and self.position > self.loop[1]:
+                self.position = self.loop[0] + (self.position - self.loop[1])
 
+            # envprofile.runcall(self.vol_env.update, SINGLE_SAMPLE_LEN)
             self.vol_env.update(SINGLE_SAMPLE_LEN)
 
             if count >= size:
                 break
 
         return finished
+
+
+# Optimization tools
+
+import sys, signal, pstats
+
+def end(signum, frame):
+    global profile
+    global envprofile
+    try:
+        ps = pstats.Stats(profile)
+        ps.sort_stats("cumtime")
+        print("\n==== COLLECT ")
+        ps.print_stats(1.0)
+        print("\n ///")
+        ps.print_callers()
+    except:
+        pass
+    sys.exit(0)
+
+# signal.signal(signal.SIGINT, end)
+# signal.signal(signal.SIGKILL, end)
+# signal.signal(signal.SIGPIPE, end)
