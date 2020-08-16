@@ -1,0 +1,3 @@
+[submodule "src/synth"]
+	path = src/synth
+	url = git@github.com:jthistle/wiskesynth.git
