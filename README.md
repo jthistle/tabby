@@ -12,7 +12,7 @@ It's early days. Functionality is limited and contributions aren't really possib
 
 ## Installation
 
-1. Make sure Python 3 and the `curses` and `simpleaudio` modules are installed.
+1. Make sure Python 3 and the `curses` module are installed.
 1. Clone the repo.
 1. Follow the instructions in [the synth README](./src/synth/samples/README.md).
 1. Run ./tabby-dev.
