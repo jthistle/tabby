@@ -466,6 +466,13 @@ fluid_midi_router_add_rule = cfunc('fluid_midi_router_add_rule', c_int,
                                     ('rule', c_void_p, 1),
                                     ('type', c_int, 1))
 
+fluid_log_function_t = CFUNCTYPE(None, c_int, c_char_p, c_void_p)
+
+fluid_set_log_function = cfunc('fluid_set_log_function', fluid_log_function_t,
+                               ('level', c_int, 1),
+                               ('fun', fluid_log_function_t, 1),
+                               ('data', c_void_p, 1))
+
 def fluid_synth_write_s16_stereo(synth, len):
     """Return generated samples in stereo 16-bit format
 
@@ -781,6 +788,8 @@ class Synth:
 
         """
         return fluid_synth_write_s16_stereo(self.synth, len)
+    def set_log_function(self, level, function):
+        fluid_set_log_function(level, fluid_log_function_t(function), None)
 
 class Sequencer:
     def __init__(self, time_scale=1000, use_system_timer=True):
