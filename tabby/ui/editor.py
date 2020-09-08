@@ -1,7 +1,9 @@
 import curses
 import re
 import json
+import time
 from os.path import expanduser, splitext
+from threading import Thread
 
 from .action import Action, ActionMod
 from lib.tab import Tab
@@ -10,6 +12,8 @@ from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .const import FILE_EXTENSION
+
+from lib.notenames import name_to_val
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
@@ -29,10 +33,13 @@ from lib.undo.remove_text import UndoRemoveText
 from lib.undo.insert_bar import UndoInsertBar
 from lib.undo.remove_bar import UndoRemoveBar
 
+# TODO ditch this?
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
+NOTE_VAL_FINDER = re.compile(r"\d+", re.I)
+
 class Editor:
-    def __init__(self, parent):
+    def __init__(self, parent, synth):
         self.parent = parent
         self.dimensions = (curses.LINES - 2, curses.COLS)
         self.win = curses.newwin(*self.dimensions, 1, 0)
@@ -47,6 +54,10 @@ class Editor:
         self.clipboard = None
         self.file_path = None
         self.__dirty = False
+
+        self.synth = synth
+        self.sfid = self.synth.sfload("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
+        self.synth.program_select(0, self.sfid, 0, 24)
 
         # Initial update
         curses.curs_set(0)
@@ -147,6 +158,40 @@ class Editor:
 
         if old_mode in (Mode.EDIT, Mode.VIEW):
             self.update_cursor()
+
+    def play_current_chord(self):
+        if not self.cursor.on_chord:
+            return
+
+        tuning = self.cursor.bar.tuning
+        vals = []
+        last_str_val = -1
+        offset = 2
+        for string in range(self.cursor.bar.nstrings):
+            string_val = name_to_val(tuning.at(string), req_octave=False)
+            if string_val <= last_str_val:
+                offset += 1
+            last_str_val = string_val
+
+            note = self.cursor.element.get_note(string)
+            if note is None:
+                continue
+            note_val_find = NOTE_VAL_FINDER.match(note.value)
+            if note_val_find is None:
+                continue
+            note_val = int(note_val_find.group(0).strip())
+
+            vals.append(string_val + offset * 12 + note_val)
+
+        for val in vals:
+            self.synth.noteon(0, val, 100)
+
+        Thread(target=self.start_noteoff_thread, args=(vals,)).start()
+
+    def start_noteoff_thread(self, vals):
+        time.sleep(1)
+        for val in vals:
+            self.synth.noteoff(0, val)
 
     def handle_cmd(self, user_cmd):
         """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.
@@ -326,6 +371,8 @@ class Editor:
         self.move_viewport_for_cursor(tab)
         self.draw()
 
+        self.play_current_chord()
+
     def clear_chord(self):
         state = CursorState(self.cursor)
         self.do(UndoClearChord(state))
@@ -375,6 +422,7 @@ class Editor:
         self.header.filename = path_to_use
         self.header.update()
         self.console.echo("Saved successfully")
+        return True
 
     def read(self, path):
         # Automatically add extension if none provided

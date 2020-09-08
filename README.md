@@ -1,6 +1,6 @@
 # Tabby
 
-Tabby is a terminal-based, WYSIWYG, vim-like tab editor.
+Tabby is a terminal-based, WYSIWYG, vaguely vim-like tab editor.
 
 It's early days. Functionality is limited and contributions aren't really possible at this stage.
 

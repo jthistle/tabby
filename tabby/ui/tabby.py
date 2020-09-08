@@ -13,11 +13,11 @@ from .cmd_parser import parse_cmd
 from util.logger import logger
 
 class Tabby:
-    def __init__(self):
+    def __init__(self, synth):
         self.mode = Mode.VIEW
 
         self.header = Header()
-        self.editor = Editor(self)
+        self.editor = Editor(self, synth)
         self.help_viewer = None     # TODO
         self.console = Console()
 

@@ -15,17 +15,23 @@ NAME_TO_VAL = {
     "B": 11,
 }
 
-def name_to_val(name):
+def name_to_val(name, req_octave = True):
     name = name.upper()
     note = name[0]
     mod = None
-    octave = None
+    octave = 0
     offset = 12
-    if name[1] in ("#", "B"):
-        mod = name[1]
-        octave = int(name[2:])
+
+    if req_octave:
+        if name[1] in ("#", "B"):
+            mod = name[1]
+            octave = int(name[2:])
+        else:
+            octave = int(name[1:])
     else:
-        octave = int(name[1:])
+        if len(name) > 1 and name[1] in ("#", "B"):
+            mod = name[1]
+            octave = int(name[2:])
 
     val = NAME_TO_VAL[note]
     if mod == "#":
