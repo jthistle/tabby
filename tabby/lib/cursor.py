@@ -9,7 +9,9 @@ WHITESPACE = re.compile(r"\s")
 class Cursor:
     def __init__(self, tab):
         self.tab = tab
-        self.element = tab.children[0].chord(0)
+        self.element = tab.children[0]
+        if self.element.is_bar:
+            self.element = self.element.chord(0)
         self.position = 0                # < generic position, e.g. string or pos in text
 
     @property
