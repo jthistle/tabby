@@ -13,9 +13,8 @@ It's early days. Functionality is limited and contributions aren't really possib
 ## Installation
 
 1. Make sure Python 3 and the `curses` module are installed.
-1. Clone the repo.
-1. Follow the instructions in [the synth README](./src/synth/samples/README.md).
-1. Run ./tabby-dev.
+2. Clone the repo.
+3. Run ./tabby-dev.
 
 Availability on pip / debian / ubuntu may or may not happen, depending on how far this project gets.
 

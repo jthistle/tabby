@@ -19,7 +19,6 @@ def main(stdscr):
     post_start()
 
     synth = Synth(gain=1)
-    synth.sfload("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
     synth.start(driver="alsa")
 
     instance = Tabby(synth)
