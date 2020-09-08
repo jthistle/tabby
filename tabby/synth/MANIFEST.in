@@ -1,3 +1,0 @@
-include test/*.sf2
-include doc/*
-include CHANGELOG

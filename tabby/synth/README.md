@@ -2,15 +2,15 @@
 
 These libraries are included under the `LICENSE`.
 
-Source code for pyFluidSynth is included in this directory, with very minor modifications.
+Source code for pyFluidSynth is available at: https://github.com/albedozero/pyfluidsynth (updated), or https://github.com/nwhitehead/pyfluidsynth (original).
 
-Source code for FluidSynth is available at: https://github.com/fluidsynth/fluidsynth
+Source code for FluidSynth is available at: https://github.com/fluidsynth/fluidsynth.
 
 ## pyFluidSynth AUTHORS
 
 Original code by Nathan Whitehead `<nwhitehe@gmail.com>`.
 Contributions by Bart Spaans `<onderstekop@gmail.com>`.
-Update to FluidSynth v2 by Bill Peterson on github: https://github.com/albedozero/pyfluidsynth
+Update to FluidSynth v2 by Bill Peterson on github: https://github.com/albedozero.
 
 ## LICENSE
 
