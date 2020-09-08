@@ -3,7 +3,7 @@ import re
 import json
 import time
 from os.path import expanduser, splitext
-from threading import Thread
+from threading import Thread, Lock
 
 from .action import Action, ActionMod
 from lib.tab import Tab
@@ -14,6 +14,7 @@ from .mode import Mode, mode_name
 from .const import FILE_EXTENSION
 
 from lib.notenames import name_to_val
+from .playback_note import PlaybackNote
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
@@ -58,6 +59,8 @@ class Editor:
         self.synth = synth
         self.sfid = self.synth.sfload("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
         self.synth.program_select(0, self.sfid, 0, 24)
+        self.playing_notes = []
+        self.playing_notes_lock = Lock()
 
         # Initial update
         curses.curs_set(0)
@@ -159,7 +162,7 @@ class Editor:
         if old_mode in (Mode.EDIT, Mode.VIEW):
             self.update_cursor()
 
-    def play_current_chord(self):
+    def play_current(self):
         if not self.cursor.on_chord:
             return
 
@@ -183,15 +186,31 @@ class Editor:
 
             vals.append(string_val + offset * 12 + note_val)
 
+        chord_playback_notes = []
+        self.playing_notes_lock.acquire()
         for val in vals:
-            self.synth.noteon(0, val, 100)
+            new_note = PlaybackNote(0, val)
 
-        Thread(target=self.start_noteoff_thread, args=(vals,)).start()
+            for i in range(len(self.playing_notes) - 1, -1, -1):
+                note = self.playing_notes[i]
+                if note.conflicts_with(new_note):
+                    note.stop(self.synth)
+                    del self.playing_notes[i]
 
-    def start_noteoff_thread(self, vals):
+            new_note.play(self.synth)
+            self.playing_notes.append(new_note)
+            chord_playback_notes.append(new_note)
+
+        self.playing_notes_lock.release()
+
+        Thread(target=self.start_noteoff_thread, args=(chord_playback_notes,)).start()
+
+    def start_noteoff_thread(self, notes):
         time.sleep(1)
-        for val in vals:
-            self.synth.noteoff(0, val)
+        for note in notes:
+            if note.playing:
+                note.stop(self.synth)
+                del self.playing_notes[self.playing_notes.index(note)]
 
     def handle_cmd(self, user_cmd):
         """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.
@@ -231,10 +250,12 @@ class Editor:
             direction = 1 if action == Action.CURSOR_MOVE_RIGHT else -1
             self.cursor.move(direction)
             self.post_cursor_move()
+            self.play_current()
         elif action in (Action.CURSOR_MOVE_BIG_RIGHT, Action.CURSOR_MOVE_BIG_LEFT):
             direction = 1 if action == Action.CURSOR_MOVE_BIG_RIGHT else -1
             self.cursor.move_big(direction)
             self.post_cursor_move()
+            self.play_current()
         elif action in (Action.CURSOR_MOVE_POSITION_BIG_RIGHT, Action.CURSOR_MOVE_POSITION_BIG_LEFT):
             direction = 1 if action == Action.CURSOR_MOVE_POSITION_BIG_RIGHT else -1
             self.cursor.move_position_big(direction)
@@ -242,9 +263,12 @@ class Editor:
         elif action == Action.CURSOR_MOVE_TWO_RIGHT:
             self.cursor.move(2)
             self.post_cursor_move()
+            self.play_current()
         elif action in (Action.CURSOR_MOVE_UP_STRING, Action.CURSOR_MOVE_DOWN_STRING):
             direction = 1 if action == Action.CURSOR_MOVE_UP_STRING else -1
             self.cursor.move_position(direction)
+            if not self.first_entry:
+                self.play_current()
             self.post_cursor_move()
         elif action in (Action.CURSOR_MOVE_POSITION_RIGHT, Action.CURSOR_MOVE_POSITION_LEFT):
             direction = 1 if action == Action.CURSOR_MOVE_POSITION_RIGHT else -1
@@ -283,6 +307,7 @@ class Editor:
             state = CursorState(self.cursor)
             self.do(UndoDuplicateNote(state, direction))
             self.update()
+            self.play_current()
         elif action == Action.TEXT_BACKSPACE:
             self.text_backspace()
         elif action == Action.TEXT_DELETE:
@@ -370,8 +395,6 @@ class Editor:
         tab = self.current_tab.layout()
         self.move_viewport_for_cursor(tab)
         self.draw()
-
-        self.play_current_chord()
 
     def clear_chord(self):
         state = CursorState(self.cursor)
