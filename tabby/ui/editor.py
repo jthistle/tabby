@@ -12,9 +12,7 @@ from util.logger import logger
 from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .const import FILE_EXTENSION
-
-from lib.notenames import name_to_val
-from .playback_note import PlaybackNote
+from .playback_manager import PlaybackManager
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
@@ -37,8 +35,6 @@ from lib.undo.remove_bar import UndoRemoveBar
 # TODO ditch this?
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
 
-NOTE_VAL_FINDER = re.compile(r"\d+", re.I)
-
 class Editor:
     def __init__(self, parent, synth):
         self.parent = parent
@@ -56,11 +52,7 @@ class Editor:
         self.file_path = None
         self.__dirty = False
 
-        self.synth = synth
-        self.sfid = self.synth.sfload("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
-        self.synth.program_select(0, self.sfid, 0, 24)
-        self.playing_notes = []
-        self.playing_notes_lock = Lock()
+        self.playback_manager = PlaybackManager(synth)
 
         # Initial update
         curses.curs_set(0)
@@ -166,51 +158,7 @@ class Editor:
         if not self.cursor.on_chord:
             return
 
-        tuning = self.cursor.bar.tuning
-        vals = []
-        last_str_val = -1
-        offset = 2
-        for string in range(self.cursor.bar.nstrings):
-            string_val = name_to_val(tuning.at(string), req_octave=False)
-            if string_val <= last_str_val:
-                offset += 1
-            last_str_val = string_val
-
-            note = self.cursor.element.get_note(string)
-            if note is None:
-                continue
-            note_val_find = NOTE_VAL_FINDER.match(note.value)
-            if note_val_find is None:
-                continue
-            note_val = int(note_val_find.group(0).strip())
-
-            vals.append(string_val + offset * 12 + note_val)
-
-        chord_playback_notes = []
-        self.playing_notes_lock.acquire()
-        for val in vals:
-            new_note = PlaybackNote(0, val)
-
-            for i in range(len(self.playing_notes) - 1, -1, -1):
-                note = self.playing_notes[i]
-                if note.conflicts_with(new_note):
-                    note.stop(self.synth)
-                    del self.playing_notes[i]
-
-            new_note.play(self.synth)
-            self.playing_notes.append(new_note)
-            chord_playback_notes.append(new_note)
-
-        self.playing_notes_lock.release()
-
-        Thread(target=self.start_noteoff_thread, args=(chord_playback_notes,)).start()
-
-    def start_noteoff_thread(self, notes):
-        time.sleep(1)
-        for note in notes:
-            if note.playing:
-                note.stop(self.synth)
-                del self.playing_notes[self.playing_notes.index(note)]
+        self.playback_manager.play_chord(self.cursor.element)
 
     def handle_cmd(self, user_cmd):
         """Handles both console commands and hotkey commands. For hotkey commands, `parts` is None.
