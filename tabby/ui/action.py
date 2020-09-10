@@ -42,6 +42,7 @@ class Action(Enum):
     REMOVE_TEXT = 38
     ADD_BAR = 39
     REMOVE_BAR = 40
+    READ_PLAINTEXT = 41
 
 
 

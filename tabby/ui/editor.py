@@ -13,6 +13,7 @@ from .colour_pairs import Pair
 from .mode import Mode, mode_name
 from .const import FILE_EXTENSION
 from .playback_manager import PlaybackManager
+from lib.from_plaintext import from_plaintext
 
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
@@ -182,6 +183,13 @@ class Editor:
 
             path = " ".join(parts[1:]).strip()
             self.read(path)
+        elif action == Action.READ_PLAINTEXT:
+            if len(parts) == 1:
+                self.console.error("Must specify file location")
+                return True
+
+            path = " ".join(parts[1:]).strip()
+            self.read_plaintext(path)
         elif action == Action.QUIT:
             if self.dirty and not force:
                 self.console.error("Tab has unsaved changes, append ! to force quit")
@@ -401,7 +409,6 @@ class Editor:
         if file_extension == "":
             path += "." + FILE_EXTENSION
 
-        raw_text = ""
         try:
             with open(expanduser(path), "r") as f:
                 raw_text = f.read()
@@ -409,7 +416,6 @@ class Editor:
             self.console.error("Couldn't open {}!".format(path))
             return False
 
-        obj = None
         try:
             obj = json.loads(raw_text)
         except json.JSONDecodeError:
@@ -423,6 +429,30 @@ class Editor:
         self.file_path = path
         self.dirty = False
         self.header.filename = path
+        self.header.update()
+        self.update()
+
+    def read_plaintext(self, path):
+        try:
+            with open(expanduser(path), "r") as f:
+                raw_text = f.read()
+        except IOError:
+            self.console.error("Couldn't open {}!".format(path))
+            return False
+
+        try:
+            model = from_plaintext(raw_text)
+        except:
+            self.console.error("Couldn't read tab!")
+            raise
+            return False
+
+        new_tab = Tab()
+        new_tab.read(model)
+        self.current_tab = new_tab
+        self.file_path = None
+        self.dirty = False
+        self.header.filename = "Untitled"
         self.header.update()
         self.update()
 

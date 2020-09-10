@@ -9,7 +9,8 @@ ALIASES = {
     Action.SET_TUNING: ["t", "tuning"],
     Action.UNDO: ["u", "undo"],
     Action.REDO: ["r", "redo"],
-    Action.OPEN: ["o", "open", "read"]
+    Action.OPEN: ["o", "open", "read"],
+    Action.READ_PLAINTEXT: ["op", "rp", "openplain", "readplain"],
 }
 
 
