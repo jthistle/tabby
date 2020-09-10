@@ -35,7 +35,7 @@ class Console:
 
     def begin_cmd(self):
         if self.in_cmd:
-            self.echo("Internal error: already in cmd!")
+            self.error("Internal error: already in cmd!")
             return
 
         self.in_cmd = True
@@ -46,7 +46,7 @@ class Console:
 
     def end_cmd(self):
         if not self.in_cmd:
-            self.echo("Internal error: not in cmd!")
+            self.error("Internal error: not in cmd!")
             return
 
         self.in_cmd = False

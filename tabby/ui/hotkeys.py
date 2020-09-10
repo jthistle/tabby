@@ -31,7 +31,7 @@ ACTION_HOTKEY_MAP = [
     ActionHotkeyLink(Action.CURSOR_MOVE_DOWN_STRING, ["KEY_DOWN"], [Mode.EDIT], [ElementType.CHORD]),
     ActionHotkeyLink(Action.MODE_EDIT, ["e"], [Mode.VIEW]),
     ActionHotkeyLink(Action.MODE_HELP, ["h"], [Mode.VIEW]),
-    ActionHotkeyLink(Action.BEGIN_CMD, [":"], [Mode.VIEW]),
+    ActionHotkeyLink(Action.BEGIN_CMD, [":"], [Mode.VIEW, Mode.HELP]),
     ActionHotkeyLink(Action.COPY, ["c"], [Mode.VIEW]),
     ActionHotkeyLink(Action.CUT, ["x"], [Mode.VIEW]),
     ActionHotkeyLink(Action.PASTE, ["v"], [Mode.VIEW]),

@@ -444,7 +444,6 @@ class Editor:
             model = from_plaintext(raw_text)
         except:
             self.console.error("Couldn't read tab!")
-            raise
             return False
 
         new_tab = Tab()

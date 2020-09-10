@@ -4,6 +4,7 @@ import curses
 from lib.element import ElementType
 from .header import Header
 from .editor import Editor
+from .help_viewer import HelpViewer
 from .console import Console
 from .mode import Mode, mode_name
 from .action import Action
@@ -18,10 +19,16 @@ class Tabby:
 
         self.header = Header()
         self.editor = Editor(self, synth)
-        self.help_viewer = None     # TODO
+        self.help_viewer = HelpViewer(self)
         self.console = Console()
 
         self.win = self.editor.win
+
+    def show_mode_str(self):
+        if self.mode != Mode.VIEW:
+            self.console.echo("-- {} MODE --".format(mode_name(self.mode)))
+        else:
+            self.console.clear()
 
     def change_mode(self, new_mode):
         if new_mode == self.mode:
@@ -35,15 +42,10 @@ class Tabby:
             self.win = self.editor.win
             self.editor.update()
         elif new_mode == Mode.HELP:
-            # TODO uhhh probably set some help text here or smth idk
             self.win = self.help_viewer.win
-            self.help_viewer.update()
+            self.help_viewer.show_welcome()
 
-        if new_mode != Mode.VIEW:
-            self.console.echo("-- {} MODE --".format(mode_name(new_mode)))
-        else:
-            self.console.clear()
-
+        self.show_mode_str()
 
     def handle_input(self):
         """Returns False when the programme should exit, otherwise true."""
@@ -54,11 +56,13 @@ class Tabby:
             res = self.console.handle_input()
             if res:
                 return True
-            elif self.console.current_cmd != "":
-                action_to_use = parse_cmd(self.console.current_cmd)
-                if not action_to_use:
-                    self.console.error("Invalid command!")
-                    return True
+            else:
+                if self.console.current_cmd != "":
+                    action_to_use = parse_cmd(self.console.current_cmd)
+                    if not action_to_use:
+                        self.console.error("Invalid command!")
+                        return True
+                self.show_mode_str()
 
         key = None
         if action_to_use is None:
@@ -77,22 +81,13 @@ class Tabby:
 
         if self.mode == Mode.EDIT:
             return self.editor.handle_input(key)
-        elif self.mode == Mode.HELP:
-            return self.help_viewer.handle_input(key)
 
         return True
-
-    def show_help(self, parts):
-        if parts is None or len(parts) < 2:
-            self.console.error("No command specified!")
-            return True
-
-        # TODO show help maybe
 
     def handle_cmd(self, user_cmd):
         action = user_cmd.action
         if action == Action.HELP:
-            return self.show_help(user_cmd.parts)
+            return self.help_viewer.show_help(user_cmd.parts)
         if action == Action.MODE_HELP:
             self.change_mode(Mode.HELP)
         elif action == Action.MODE_EDIT:

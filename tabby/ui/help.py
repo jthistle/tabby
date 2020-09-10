@@ -97,6 +97,12 @@ ACTION_HELP_PAGES = {
         "usages": ":{cmd} <file path>",
         "desc": "Open the {name} file located at file path."
     },
+    Action.READ_PLAINTEXT: {
+        "usages": ":{cmd} <file path>",
+        "desc": """Open the plain text file located at the path and try to read it into Tabby.
+    Warning: badly formatted tabs will not be read correctly and at worst will not be read at all.
+"""
+    },
     Action.HELP: {
         "usages": ":{cmd} [command]",
         "desc": "Get help with the usage of a command. If no command provided, show the main help screen."
