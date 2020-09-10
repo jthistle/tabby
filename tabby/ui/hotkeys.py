@@ -49,6 +49,10 @@ ACTION_HOTKEY_MAP = [
     ActionHotkeyLink(Action.REMOVE_TEXT, ["kDC5"], [Mode.VIEW], [ElementType.TEXT]),
     ActionHotkeyLink(Action.ADD_BAR, ["B"], [Mode.VIEW]),
     ActionHotkeyLink(Action.REMOVE_BAR, ["kDC6"], [Mode.VIEW], [ElementType.CHORD]),
+    ActionHotkeyLink(Action.MOVE_VIEW_DOWN, ["KEY_UP"], [Mode.HELP]),
+    ActionHotkeyLink(Action.MOVE_VIEW_UP, ["KEY_DOWN"], [Mode.HELP]),
+    ActionHotkeyLink(Action.MOVE_VIEW_DOWN, ["kDN5"], [Mode.VIEW, Mode.EDIT]),
+    ActionHotkeyLink(Action.MOVE_VIEW_UP, ["kUP5"], [Mode.VIEW, Mode.EDIT]),
 ]
 
 

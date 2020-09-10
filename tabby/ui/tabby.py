@@ -49,8 +49,6 @@ class Tabby:
 
     def handle_input(self):
         """Returns False when the programme should exit, otherwise true."""
-        # self.console.echo("Char: {}".format(repr(key)).replace("\n", "newline"))
-
         action_to_use = None
         if self.console.in_cmd:
             res = self.console.handle_input()
@@ -67,6 +65,7 @@ class Tabby:
         key = None
         if action_to_use is None:
             key = self.win.getkey()
+            # self.console.echo("Char: {}".format(repr(key)).replace("\n", "newline"))
             if len(key) == 1 and ord(key) == 27:    # ESC, temp for debug
                 self.change_mode(Mode.VIEW)
                 return True
@@ -97,6 +96,12 @@ class Tabby:
         elif action == Action.BEGIN_CMD:
             self.console.begin_cmd()
         else:
-            return self.editor.handle_cmd(user_cmd)
+            res = None
+            if self.mode == Mode.HELP:
+                res = self.help_viewer.handle_cmd(user_cmd)
+
+            if res is None:
+                return self.editor.handle_cmd(user_cmd)
+            return res
 
         return True

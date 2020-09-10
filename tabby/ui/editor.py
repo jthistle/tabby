@@ -230,6 +230,12 @@ class Editor:
             direction = 1 if action == Action.CURSOR_MOVE_POSITION_RIGHT else -1
             self.cursor.move_position(direction)
             self.post_cursor_move()
+        elif action == Action.MOVE_VIEW_UP:
+            self.viewport_pos = max(0, self.viewport_pos - 1)
+            self.update()
+        elif action == Action.MOVE_VIEW_DOWN:
+            self.viewport_pos = self.viewport_pos + 1
+            self.update()
         elif action == Action.NOTE_DELETE_LAST:
             state = CursorState(self.cursor)
             new_val = self.cursor.note.value[:-1]

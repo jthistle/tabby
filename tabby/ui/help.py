@@ -19,28 +19,40 @@ def get_version():
 
 
 HELP_STR = """
-=== {name} {version} ===
+===== {name} {version} =====
 Revision {rev}
 
-= Keys to change modes while in view mode:
+== Essential ==
 
-e - enter edit mode
+Move this page up and down with 'up arrow' and 'down arrow'.
+
+== Modes ==
+
+Tabby works using a 'mode' system. The default mode is View Mode. In Edit Mode
+you can edit the individual notes of a tab, as well as text and annotations. In
+Help Mode you can see this message and help for various commands.
+
+Keybindings for when you are in view mode:
+
+e - enter Edit Mode
 h - display this help message
 
-== Mode-specific bindings
+== Mode-specific bindings ==
 
-= ALL modes:
+= ALL modes =
 
-esc - back to view mode
+esc - return to View Mode
 
-= view mode AND edit mode
+= View Mode AND Edit Mode
 
 arrow keys        - move cursor
 space             - move cursor forward two steps
 ctrl + arrow keys - move cursor in large steps
 delete            - clear selected chord
+delete            - remove selected text
 ctrl + delete     - remove selected chord
 ctrl + space      - insert chord after selected chord
+ctrl + up/dn arrow - move the viewport up or down
 
 = view mode (default):
 
@@ -53,6 +65,9 @@ z                 - undo
 shift + z         - redo
 +                 - double bar length
 -                 - halve bar length
+shift + t         - add text
+shift + b         - insert bar
+ctrl + shift + delete  - delete bar
 
 = edit mode:
 
