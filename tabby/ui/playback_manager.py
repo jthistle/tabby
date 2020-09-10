@@ -35,7 +35,7 @@ class PlaybackManager:
         self.notes = []
         self.notes_lock = Lock()
 
-        self.sfid = self.synth.sfload("/home/james/Downloads/GeneralUserGS/GeneralUserGS.sf2")
+        self.sfid = self.synth.sfload("./tabby/synth/soundfonts/GeneralUserGS-modified.sf2")
         self.synth.program_select(0, self.sfid, 0, 24)
 
     def play_chord(self, chord):
