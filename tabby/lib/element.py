@@ -8,6 +8,7 @@ class ElementType(Enum):
     TEXT = 3
     CHORD = 4
     NOTE = 5
+    ANNOTATION = 6
 
 class ElementBase:
     def __init__(self, el_type):
@@ -32,3 +33,7 @@ class ElementBase:
     @property
     def is_note(self):
         return self.type == ElementType.NOTE
+
+    @property
+    def is_annotation(self):
+        return self.type == ElementType.ANNOTATION

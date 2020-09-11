@@ -8,6 +8,7 @@ class UndoRemoveChord(UndoAction):
         super().__init__("remove chord")
         self.state = state
         self.initial_val = None
+        self.initial_annotation = None
 
     def populate(self, chord):
         string_val_map = {}
@@ -18,6 +19,7 @@ class UndoRemoveChord(UndoAction):
     def redo(self, tab):
         bar, chord, _ = tab.hydrate_state(self.state)
         self.initial_val = self.populate(chord)
+        self.initial_annotation = chord.annotation.value
         bar.delete_chord(self.state.chord)
 
     def undo(self, tab):
@@ -29,3 +31,5 @@ class UndoRemoveChord(UndoAction):
         new_chord = bar.add_chord(self.state.chord, Chord(bar))
         for string in self.initial_val:
             new_chord.get_note(string).value = self.initial_val[string]
+
+        new_chord.annotation.value = self.initial_annotation

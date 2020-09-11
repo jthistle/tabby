@@ -11,6 +11,7 @@ from .tab_meta import TabMeta
 from .undo.cursor_state import CursorState
 from .undo.cursor_state_text import CursorStateText
 from .undo.cursor_state_generic import CursorStateGeneric
+from .undo.cursor_state_annotation import CursorStateAnnotation
 
 from meta.api import API_VERSION
 
@@ -60,6 +61,14 @@ class Tab(ElementBase):
 
         return element, position
 
+    def hydrate_state_annotation(self, state):
+        bar = self.element(state.bar)
+        chord = bar.chord(state.chord)
+        annotation = chord.annotation
+        position = state.position
+
+        return annotation, position
+
     def hydrate_state(self, state, ignore = 0):
         """Take a cursor state and return the objects the it points to.
             ignore is a bitmask: 1 = bar, 2 = chord, 4 = note, for normal cursor state."""
@@ -70,6 +79,8 @@ class Tab(ElementBase):
             return self.hydrate_state_text(state)
         elif type(state) == CursorStateGeneric:
             return self.hydrate_state_generic(state)
+        elif type(state) == CursorStateAnnotation:
+            return self.hydrate_state_annotation(state)
 
         return None
 
@@ -124,8 +135,8 @@ class Tab(ElementBase):
             return None
 
         for i in range(found - 1, -1, -1):
-            if children[i].is_bar:
-                return children[i]
+            if self.children[i].is_bar:
+                return self.children[i]
 
         return None
 
@@ -143,6 +154,7 @@ class Tab(ElementBase):
         self.cursor.string = len(strings) - 1
 
     def end_system(self, bar_frag, lines, vertical_offset):
+        """Renders a layout fragment into the lines array."""
         if bar_frag is None:
             return
         bar_lines = bar_frag.lines
@@ -213,6 +225,12 @@ class Tab(ElementBase):
                     current_width += width
 
                 # Layout bar
+                cursor_selecting_annotation = self.cursor.on_annotation and child == self.cursor.bar
+                must_empty_selected_annotation = False
+                if cursor_selecting_annotation and self.cursor.element.empty:
+                    self.cursor.element.value = " "
+                    must_empty_selected_annotation = True
+
                 bar_fragment = child.layout(system_start)
 
                 # Decide where to put the cursor
@@ -220,7 +238,7 @@ class Tab(ElementBase):
                     cols, curs_width = child.get_cursor_pos_and_width(system_start, self.cursor.element)
                     horizontal = padding_left + cols
                     vertical = bar_fragment.pos(LayoutAnchorName.HIGHEST_STRING)
-                    if not system_start and current_bar_frag is not None:
+                    if current_bar_frag is not None:
                         horizontal += current_bar_frag.width
                     cursor_highlight_start = [vertical + vertical_offset, horizontal]
                     cursor_highlight_end = [vertical + vertical_offset + child.nstrings - 1, horizontal + curs_width - 1]
@@ -237,6 +255,31 @@ class Tab(ElementBase):
                     for y in range(cursor_strong_highlight_start[0], cursor_strong_highlight_end[0] + 1):
                         for x in range(cursor_strong_highlight_start[1], cursor_strong_highlight_end[1] + 1):
                             cursor_highlight_strong.append((y, x))
+                elif cursor_selecting_annotation:
+                    annotation = self.cursor.element
+                    chord = self.cursor.element.parent
+                    cols, _ = child.get_cursor_pos_and_width(system_start, chord)
+                    horizontal = padding_left + cols
+                    vertical = bar_fragment.pos(LayoutAnchorName.HIGHEST_STRING) - annotation.height
+                    if current_bar_frag is not None:
+                        horizontal += current_bar_frag.width
+
+                    # Add annotation highlighting
+                    annotation_lines = annotation.lines
+                    for i in range(annotation.height):
+                        for j in range(len(annotation_lines[i])):
+                            cursor_highlight.append((i + vertical + vertical_offset, j + horizontal))
+
+                    total_length = 0
+                    for i in range(len(annotation_lines)):
+                        line = annotation_lines[i]
+                        total_length += len(line)
+                        if self.cursor.position <= total_length:
+                            cursor_highlight_strong.append((i + vertical + vertical_offset, horizontal + len(line) - (total_length - self.cursor.position)))
+                            break
+
+                if must_empty_selected_annotation:
+                    self.cursor.element.value = ""
 
                 if current_bar_frag is None:
                     current_bar_frag = bar_fragment

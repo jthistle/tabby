@@ -23,9 +23,16 @@ class Cursor:
         return self.element.is_text
 
     @property
+    def on_annotation(self):
+        return self.element.is_annotation
+
+    @property
     def bar(self):
-        assert self.on_chord
-        return self.element.parent
+        assert self.on_chord or self.on_annotation
+        if self.on_chord:
+            return self.element.parent
+        elif self.on_annotation:
+            return self.element.parent.parent
 
     @property
     def note(self):
@@ -46,12 +53,12 @@ class Cursor:
 
     @property
     def chord_number(self):
-        assert self.on_chord
+        assert self.on_chord or self.on_annotation
         return self.bar.chord_number(self.element)
 
     @property
     def root_el(self):
-        return self.bar if self.on_chord else self.element
+        return self.bar if self.on_chord or self.on_annotation else self.element
 
     def move(self, direction):
         """- for left, + for right"""
@@ -99,12 +106,26 @@ class Cursor:
                 break
 
     def move_string(self, direction):
-        cur_bar = self.bar
-        max_s = cur_bar.nstrings - 1
-        self.position = min(max_s, max(0, self.position + direction))
+        if self.on_chord:
+            cur_bar = self.bar
+            max_s = cur_bar.nstrings - 1
+            if self.position == max_s and direction == 1:
+                self.element = self.element.annotation
+                self.position = 0
+            else:
+                self.position = max(0, self.position + direction)
+        elif self.on_annotation:
+            if direction != -1:
+                return
+            self.element = self.element.parent
+            self.position = self.element.parent.nstrings - 1
 
     def move_text_pos(self, direction):
         max_pos = self.element.text_length - 1
+        self.position = min(max_pos, max(0, self.position + direction))
+
+    def move_annotation_pos(self, direction):
+        max_pos = len(self.element.value)
         self.position = min(max_pos, max(0, self.position + direction))
 
     def move_position(self, direction):
@@ -113,6 +134,8 @@ class Cursor:
             self.move_string(direction)
         elif self.on_text:
             self.move_text_pos(direction)
+        elif self.on_annotation:
+            self.move_annotation_pos(direction)
 
     def move_position_big(self, direction):
         """Moves around text (only, currently) up to a boundary delimited by a non alphanumeric character. -1 for left, +1 for right"""

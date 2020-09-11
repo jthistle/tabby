@@ -43,9 +43,10 @@ class HelpViewer:
 
     def update(self):
         self.win.erase()
-        self.win.addstr("\n".join(
-            self.current_content.split("\n")[self.position:self.dimensions[0] + self.position]
-        ))
+        self.win.addstr("\n".join([
+            " " + x for x in self.current_content.split("\n")[self.position:self.dimensions[0] + self.position]
+        ]))
+        self.win.refresh()
 
     def update_parent_mode(self):
         if self.parent.mode != Mode.HELP:

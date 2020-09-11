@@ -18,6 +18,7 @@ from lib.from_plaintext import from_plaintext
 from lib.undo.cursor_state import CursorState
 from lib.undo.cursor_state_text import CursorStateText
 from lib.undo.cursor_state_generic import CursorStateGeneric
+from lib.undo.cursor_state_annotation import CursorStateAnnotation
 from lib.undo.set_note_value import UndoSetNoteValue
 from lib.undo.duplicate_note import UndoDuplicateNote
 from lib.undo.set_tuning import UndoSetTuning
@@ -32,6 +33,7 @@ from lib.undo.insert_text import UndoInsertText
 from lib.undo.remove_text import UndoRemoveText
 from lib.undo.insert_bar import UndoInsertBar
 from lib.undo.remove_bar import UndoRemoveBar
+from lib.undo.insert_annotation_character import UndoInsertAnnotationCharacter
 
 # TODO ditch this?
 ACCEPTED_NOTE_VALS = re.compile(r"[a-z0-9~/\\<>\^]", re.I)
@@ -96,6 +98,7 @@ class Editor:
             tab = self.current_tab.layout()
 
         lines = tab.txt.split("\n")[self.viewport_pos:self.viewport_pos + self.dimensions[0]]
+
         self.win.addstr(0, 0, "\n".join(lines))
 
         self.update_cursor(tab)
@@ -222,7 +225,7 @@ class Editor:
             self.play_current()
         elif action in (Action.CURSOR_MOVE_UP_STRING, Action.CURSOR_MOVE_DOWN_STRING):
             direction = 1 if action == Action.CURSOR_MOVE_UP_STRING else -1
-            self.cursor.move_position(direction)
+            self.cursor.move_string(direction)
             if not self.first_entry:
                 self.play_current()
             self.post_cursor_move()
@@ -523,6 +526,21 @@ class Editor:
 
         return True
 
+    def annotation_input(self, key):
+        if not len(key) == 1:
+            return True
+
+        if ord(key) < 32 and ord(key) not in (9, 10, 13):
+            return True
+
+        state = CursorStateAnnotation(self.cursor)
+        self.do(UndoInsertAnnotationCharacter(state, key))
+        logger.debug("{} key {}".format(state, key))
+        self.cursor.move_position(1)
+        self.update()
+
+        return True
+
     def handle_input(self, key):
         if self.mode != Mode.EDIT:
             return True
@@ -531,6 +549,8 @@ class Editor:
             return self.note_input(key)
         elif self.cursor.on_text:
             return self.text_input(key)
+        elif self.cursor.on_annotation:
+            return self.annotation_input(key)
         return True
 
     def draw(self):
