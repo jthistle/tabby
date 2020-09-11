@@ -43,7 +43,7 @@ h - display this help message
 
 esc - return to View Mode
 
-= View Mode AND Edit Mode
+= View Mode AND Edit Mode =
 
 arrow keys        - move cursor
 space             - move cursor forward two steps
@@ -54,7 +54,7 @@ ctrl + delete     - remove selected chord
 ctrl + space      - insert chord after selected chord
 ctrl + up/dn arrow - move the viewport up or down
 
-= view mode (default):
+= View Mode =
 
 :                 - open console
 esc               - exit console
@@ -69,7 +69,7 @@ shift + t         - add text
 shift + b         - insert bar
 ctrl + shift + delete  - delete bar
 
-= edit mode:
+= Edit Mode =
 
 (type)             - enter note value
 up and down arrows - change note selection
