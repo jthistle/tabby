@@ -80,6 +80,15 @@ class Editor:
     def dirty(self):
         return self.__dirty
 
+    @property
+    def current_tab(self):
+        return self.__current_tab
+
+    @current_tab.setter
+    def current_tab(self, tab):
+        self.__current_tab = tab
+        self.layout_model = Layout(tab)
+
     @dirty.setter
     def dirty(self, val):
         self.__dirty = val
@@ -442,6 +451,7 @@ class Editor:
         self.header.filename = path
         self.header.update()
         self.update()
+        self.console.echo("Opened {}".format(path))
 
     def read_plaintext(self, path):
         try:
