@@ -8,6 +8,13 @@ from util.logger import logger
 DEFAULT_WIDTH = 16
 
 class Bar(ElementBase):
+    """A bar (Am. measure) is a top-level unit of a tab. It contains `chords` and has a `tuning`.
+    The tuning determines the number of strings in the bar. The number of chords determines the
+    width of the bar.
+
+    Since tunings are stored on a per-bar basis, this implies support for tuning changes in a tab.
+    While support for this is a goal, it has not yet been properly implemented or tested.
+    """
     def __init__(self, parent):
         super().__init__(ElementType.BAR)
         self.parent = parent
@@ -35,7 +42,9 @@ class Bar(ElementBase):
         return False
 
     def change_size(self, mult):
-        """If >1, mult must be an int. If <1, mult must be a rational number in the form 1/n, where n is an int."""
+        """If >1, mult must be an int. If <1, mult must be a rational number in the form 1/n, where n is an int.
+        A mult value of 2 will double the width of the bar. A mult value of 1/2 will halve it.
+        """
         if mult > 1:
             mult = int(mult)
             for i in range(1, self.size * mult, mult):
@@ -149,6 +158,7 @@ class Bar(ElementBase):
         return self.chords[len(self.chords) - 1]
 
     def tuning_causes_loss(self, new_tuning):
+        """Determines if changing the tuning of this bar will cause a loss of data."""
         if len(new_tuning) >= self.nstrings:
             return False
         new_max = len(new_tuning) - 1

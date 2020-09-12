@@ -17,6 +17,10 @@ from meta.api import API_VERSION
 
 
 class Tab(ElementBase):
+    """A model of an ASCII guitar tab. Its children are the top-level elements
+    Bar or Text only. The tab handles the undo stack, the tab metadata, and the
+    location of objects based on dehydrated cursor states.
+    """
     def __init__(self):
         super().__init__(ElementType.TAB)
         self.default_tuning = Tuning()
@@ -135,12 +139,18 @@ class Tab(ElementBase):
         return None
 
     def tuning_causes_loss(self, new_tuning: [str]):
+        """Determines if setting a new tunning for the whole tab will
+        cause loss of data.
+        """
         for bar in self.bars:
             if bar.tuning_causes_loss(new_tuning):
                 return True
         return False
 
     def set_tuning(self, strings):
+        """Sets a tuning for the whole tab based on a list of `strings`, e.g.
+        `strings = ["E", "A", "D", "G"]`
+        """
         new_tuning = Tuning(" ".join(strings))
         self.default_tuning = new_tuning
         for bar in self.bars:

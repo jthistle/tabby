@@ -1,9 +1,7 @@
 import curses
 import re
 import json
-import time
 from os.path import expanduser, splitext
-from threading import Thread, Lock
 
 from .action import Action, ActionMod
 from lib.tab import Tab

@@ -12,6 +12,9 @@ class LineType(Enum):
 
 
 def from_plaintext(text):
+    """Attempts to parse a plaintext tab `text` into a Tabby-readable tab object.
+    Ill-formed tabs will cause it to raise an exception, as may certain edge cases.
+    """
     model = {
         "meta": {
             "name": "Untitled",

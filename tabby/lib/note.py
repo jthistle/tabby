@@ -2,6 +2,9 @@
 from .element import ElementBase, ElementType
 
 class Note(ElementBase):
+    """A note is a child of a chord. It is a primitive object and has
+    no children. Its value need not be a number, any string is acceptable.
+    """
     def __init__(self, parent, string, value):
         super().__init__(ElementType.NOTE)
         self.parent = parent

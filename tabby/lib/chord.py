@@ -5,6 +5,9 @@ from .note import Note
 from .annotation import Annotation
 
 class Chord(ElementBase):
+    """A chord is a child of a bar. It holds notes and an optional annotation.
+    A chord is as wide as its widest note.
+    """
     def __init__(self, parent):
         super().__init__(ElementType.CHORD)
         self.parent = parent

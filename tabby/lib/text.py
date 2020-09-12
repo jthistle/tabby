@@ -2,6 +2,9 @@
 from .element import ElementBase, ElementType
 
 class Text(ElementBase):
+    """Text is a top-level tab element. It is also primitive.
+    The value of the text can be any string incl. newlines.
+    """
     def __init__(self, parent, value = ""):
         super().__init__(ElementType.TEXT)
         self.parent = parent

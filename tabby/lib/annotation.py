@@ -3,6 +3,9 @@ from .element import ElementBase, ElementType
 
 
 class Annotation(ElementBase):
+    """An annotation is a child of a chord. It is a primitive.
+    An annotation is displayed above the chord in line with it.
+    """
     def __init__(self, parent):
         super().__init__(ElementType.ANNOTATION)
         self.value = ""

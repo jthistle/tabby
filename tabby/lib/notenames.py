@@ -16,6 +16,13 @@ NAME_TO_VAL = {
 }
 
 def name_to_val(name, req_octave = True):
+    """Given a note name (e.g. Bb4) return the MIDI key value associated
+    with the note.
+
+    If req_octave is False, then the note name must not include an octave,
+    (i.e. Bb is valid, but Bb4 is not). The value returned will then be
+    contained to one octave (specified by the offset).
+    """
     name = name.upper()
     note = name[0]
     mod = None
