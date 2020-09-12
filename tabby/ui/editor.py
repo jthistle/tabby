@@ -7,10 +7,10 @@ from threading import Thread, Lock
 
 from .action import Action, ActionMod
 from lib.tab import Tab
-from lib.text import Text
+from lib.layout import Layout
 from util.logger import logger
 from .colour_pairs import Pair
-from .mode import Mode, mode_name
+from .mode import Mode
 from .const import FILE_EXTENSION
 from .playback_manager import PlaybackManager
 from lib.from_plaintext import from_plaintext
@@ -49,6 +49,7 @@ class Editor:
         self.last_cursor_draw = []
 
         self.current_tab = Tab()
+        self.layout_model = Layout(self.current_tab)
 
         self.first_entry = True     # first entry after moving the cursor to this position
         self.clipboard = None
@@ -95,7 +96,7 @@ class Editor:
         self.win.erase()
 
         if tab is None:
-            tab = self.current_tab.layout()
+            tab = self.layout_model.layout()
 
         lines = tab.txt.split("\n")[self.viewport_pos:self.viewport_pos + self.dimensions[0]]
 
@@ -106,7 +107,7 @@ class Editor:
 
     def update_cursor(self, tab = None):
         if tab is None:
-            tab = self.current_tab.layout()
+            tab = self.layout_model.layout()
 
         # Remove last highlighting if only updating cursor
         self.clear_cursor()
@@ -360,7 +361,7 @@ class Editor:
 
     def post_cursor_move(self):
         self.first_entry = True
-        tab = self.current_tab.layout()
+        tab = self.layout_model.layout()
         self.move_viewport_for_cursor(tab)
         self.draw()
 
