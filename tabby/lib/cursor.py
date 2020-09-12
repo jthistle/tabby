@@ -2,7 +2,7 @@
 import re
 
 from util.logger import logger
-from .note import Note
+
 
 WHITESPACE = re.compile(r"\s")
 

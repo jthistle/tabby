@@ -154,6 +154,9 @@ class Editor:
     def on_mode_change(self, old_mode, new_mode):
         if new_mode == Mode.EDIT:
             self.first_entry = True
+        elif new_mode == Mode.VIEW and self.cursor.on_annotation:
+            self.cursor.element = self.cursor.element.parent
+            self.cursor.position = 0
 
         if old_mode in (Mode.EDIT, Mode.VIEW):
             self.update_cursor()
