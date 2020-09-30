@@ -45,6 +45,7 @@ class Action(Enum):
     READ_PLAINTEXT = 41
     MOVE_VIEW_DOWN = 42
     MOVE_VIEW_UP = 43
+    LIST = 44
 
 
 

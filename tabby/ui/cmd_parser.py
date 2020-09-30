@@ -11,6 +11,7 @@ ALIASES = {
     Action.REDO: ["r", "redo"],
     Action.OPEN: ["o", "open", "read"],
     Action.READ_PLAINTEXT: ["op", "rp", "openplain", "readplain"],
+    Action.LIST: ["l", "list"],
 }
 
 

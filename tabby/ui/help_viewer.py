@@ -2,7 +2,7 @@
 import curses
 
 from .action import Action
-from .help import get_help
+from .help import get_help, get_cmd_list
 from util.logger import logger
 from .mode import Mode
 
@@ -69,5 +69,11 @@ class HelpViewer:
 
         self.update_parent_mode()
         self.current_content = res
+        self.update()
+        return True
+
+    def show_list(self):
+        self.update_parent_mode()
+        self.current_content = get_cmd_list()
         self.update()
         return True

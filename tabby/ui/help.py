@@ -24,13 +24,20 @@ Revision {rev}
 
 == Essential ==
 
-Move this page up and down with 'up arrow' and 'down arrow'.
+Move this page up and down with  up arrow  and  down arrow   .
+
+== Note on console ==
+
+You can access the console by typing  :  . To list commands that can be used at
+the console, type  :list<ENTER>  .
 
 == Modes ==
 
-Tabby works using a 'mode' system. The default mode is View mode. In Edit mode
-you can edit the individual notes of a tab, as well as text and annotations. In
-Help mode you can see this message and help for various commands.
+Tabby works using a 'mode' system.
+
+View mode is the default mode.
+In Edit mode you can edit the individual notes of a tab, as well as text and annotations.
+In Help mode you can see this message and help for various commands.
 
 Keybindings for when you are in view mode:
 
@@ -98,10 +105,12 @@ description:
 ACTION_HELP_PAGES = {
     Action.QUIT: {
         "usages": ":{cmd}[!]",
+        "shortdesc": "Quit Tabby.",
         "desc": "Quit {name}. Append `!` to force quit even if there are unsaved changes."
     },
     Action.SAVE_QUIT: {
         "usages": ":{cmd}[!] [file path]",
+        "shortdesc": "Quit Tabby, saving any unsaved changes.",
         "desc": "Quit {name}, saving any unsaved changes. Append `!` to force quit even if saving fails."
     },
     Action.SAVE: {
@@ -114,12 +123,14 @@ ACTION_HELP_PAGES = {
     },
     Action.READ_PLAINTEXT: {
         "usages": ":{cmd} <file path>",
+        "shortdesc": "Attempt to read a plain text tab file into Tabby.",
         "desc": """Open the plain text file located at the path and try to read it into Tabby.
     Warning: badly formatted tabs will not be read correctly and at worst will not be read at all.
 """
     },
     Action.HELP: {
         "usages": ":{cmd} [command]",
+        "shortdesc": "Get help with the usage of a command.",
         "desc": "Get help with the usage of a command. If no command provided, show the main help screen."
     },
     Action.SET_TUNING: {
@@ -127,6 +138,7 @@ ACTION_HELP_PAGES = {
             ":{cmd} <string 1> [string 2] [string 3] ...",
             ":{cmd} <tuning name>"
         ],
+        "shortdesc":  "Set the tuning of the tab.",
         "desc": """Set the tuning of the tab. If strings are provided, set the tuning as the string names, with string 1
     being the bottom string. Strings can be max 2 characters long.
 
@@ -146,6 +158,10 @@ ACTION_HELP_PAGES = {
         "usages": ":{cmd}",
         "desc": "Redo the last undoable action."
     },
+    Action.LIST: {
+        "usages": ":{cmd}",
+        "desc": "List all different commands."
+    },
 }
 
 for action in ACTION_HELP_PAGES:
@@ -161,3 +177,13 @@ def get_help(cmd_str = None):
         if action is None:
             return None
         return ACTION_HELP_FORMAT.format(name=NAME, version=VERSION, aliases=", ".join(ALIASES[action]), **ACTION_HELP_PAGES[action]).format(name=NAME, cmd=ALIASES[action][0])
+
+
+def get_cmd_list():
+    acc = "\n=== Tabby {version}: commands ===\n\n".format(version=VERSION)
+
+    for action in ACTION_HELP_PAGES:
+        short = ACTION_HELP_PAGES[action].get("shortdesc") or ACTION_HELP_PAGES[action].get("desc")
+        acc += ", ".join([":" + x for x in ALIASES[action]]) + "  -  " + short + "\n\n"
+
+    return acc

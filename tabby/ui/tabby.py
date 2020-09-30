@@ -87,7 +87,9 @@ class Tabby:
         action = user_cmd.action
         if action == Action.HELP:
             return self.help_viewer.show_help(user_cmd.parts)
-        if action == Action.MODE_HELP:
+        elif action == Action.LIST:
+            return self.help_viewer.show_list()
+        elif action == Action.MODE_HELP:
             self.change_mode(Mode.HELP)
         elif action == Action.MODE_EDIT:
             self.change_mode(Mode.EDIT)
