@@ -1,6 +1,5 @@
 
-import curses
-
+from meta.info import VERSION
 from lib.element import ElementType
 from .header import Header
 from .editor import Editor
@@ -23,6 +22,7 @@ class Tabby:
         self.console = Console()
 
         self.win = self.editor.win
+        self.console.echo("Tabby {}, type :help for help".format(VERSION))
 
     def show_mode_str(self):
         if self.mode != Mode.VIEW:

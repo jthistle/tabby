@@ -9,7 +9,7 @@ class Mode(Enum):
 MODE_NAMES = {
     Mode.VIEW: "VIEW",
     Mode.EDIT: "EDIT",
-    Mode.HELP: "HELP"
+    Mode.HELP: "HELP",
 }
 
 def mode_name(mode):
