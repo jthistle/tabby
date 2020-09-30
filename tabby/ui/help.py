@@ -1,6 +1,6 @@
 
 import subprocess
-from meta.info import NAME, VERSION, DEV_URL
+from meta.info import VERSION, DEV_URL
 from .cmd_parser import Action, ALIASES, action_from_alias
 
 def get_revision():
@@ -19,7 +19,7 @@ def get_version():
 
 
 HELP_STR = """
-===== {name} {version} =====
+===== Tabby {version} =====
 Revision {rev}
 
 == Essential ==
@@ -84,13 +84,13 @@ backspace          - delete last character entered
 
 ---
 
-{name} is by James Thistlewood and is licensed under the GPL-v3.
+Tabby is by James Thistlewood and is licensed under the GPL-v3.
 Development at {url}.
-""".format(name=NAME, version=VERSION, rev=get_revision(), url=DEV_URL)
+""".format(version=VERSION, rev=get_revision(), url=DEV_URL)
 
 
 ACTION_HELP_FORMAT = """
-=== {name} {version}: manual ===
+=== Tabby {version}: manual ===
 
 aliases:
     {aliases}
@@ -106,12 +106,12 @@ ACTION_HELP_PAGES = {
     Action.QUIT: {
         "usages": ":{cmd}[!]",
         "shortdesc": "Quit Tabby.",
-        "desc": "Quit {name}. Append `!` to force quit even if there are unsaved changes."
+        "desc": "Quit Tabby. Append `!` to force quit even if there are unsaved changes."
     },
     Action.SAVE_QUIT: {
         "usages": ":{cmd}[!] [file path]",
         "shortdesc": "Quit Tabby, saving any unsaved changes.",
-        "desc": "Quit {name}, saving any unsaved changes. Append `!` to force quit even if saving fails."
+        "desc": "Quit Tabby, saving any unsaved changes. Append `!` to force quit even if saving fails."
     },
     Action.SAVE: {
         "usages": ":{cmd} [file path]",
@@ -119,7 +119,7 @@ ACTION_HELP_PAGES = {
     },
     Action.OPEN: {
         "usages": ":{cmd} <file path>",
-        "desc": "Open the {name} file located at file path."
+        "desc": "Open the Tabby file located at file path."
     },
     Action.READ_PLAINTEXT: {
         "usages": ":{cmd} <file path>",
@@ -176,7 +176,7 @@ def get_help(cmd_str = None):
         action = action_from_alias(cmd_str)
         if action is None:
             return None
-        return ACTION_HELP_FORMAT.format(name=NAME, version=VERSION, aliases=", ".join(ALIASES[action]), **ACTION_HELP_PAGES[action]).format(name=NAME, cmd=ALIASES[action][0])
+        return ACTION_HELP_FORMAT.format(version=VERSION, aliases=", ".join(ALIASES[action]), **ACTION_HELP_PAGES[action]).format(cmd=ALIASES[action][0])
 
 
 def get_cmd_list():

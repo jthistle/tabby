@@ -1,5 +1,4 @@
 import curses
-from meta.info import NAME
 
 class Header:
     def __init__(self):
@@ -15,7 +14,7 @@ class Header:
 
     def update(self):
         dirty = "*" if self.dirty else ""
-        header_txt = "{}{} - {}".format(self.filename, dirty, NAME)
+        header_txt = "{}{} - Tabby".format(self.filename, dirty)
         self.win.addstr(0, (self.width - len(header_txt)) // 2, header_txt)
         self.draw()
 
