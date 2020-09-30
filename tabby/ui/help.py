@@ -28,22 +28,22 @@ Move this page up and down with 'up arrow' and 'down arrow'.
 
 == Modes ==
 
-Tabby works using a 'mode' system. The default mode is View Mode. In Edit Mode
+Tabby works using a 'mode' system. The default mode is View mode. In Edit mode
 you can edit the individual notes of a tab, as well as text and annotations. In
-Help Mode you can see this message and help for various commands.
+Help mode you can see this message and help for various commands.
 
 Keybindings for when you are in view mode:
 
-e - enter Edit Mode
+e - enter Edit mode
 h - display this help message
 
 == Mode-specific bindings ==
 
 = ALL modes =
 
-esc - return to View Mode
+esc - return to View mode
 
-= View Mode AND Edit Mode =
+= View mode AND Edit mode =
 
 arrow keys        - move cursor
 space             - move cursor forward two steps
@@ -54,7 +54,7 @@ ctrl + delete     - remove selected chord
 ctrl + space      - insert chord after selected chord
 ctrl + up/dn arrow - move the viewport up or down
 
-= View Mode =
+= View mode =
 
 :                 - open console
 esc               - exit console
@@ -69,7 +69,7 @@ shift + t         - add text
 shift + b         - insert bar
 ctrl + shift + delete  - delete bar
 
-= Edit Mode =
+= Edit mode =
 
 (type)             - enter note value
 up and down arrows - change note selection
